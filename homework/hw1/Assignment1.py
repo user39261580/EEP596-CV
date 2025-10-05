@@ -19,10 +19,10 @@ class ComputerVisionAssignment:
         # print(cv2.__version__)
 
     def load_and_analyze_image(self):
-        """
-        Fill your code here
+        Image_data_type = type(self.image)
+        Pixel_data_type = self.image.dtype
+        Image_shape = self.image.shape
 
-        """
         # print(f"Image data type: {Image_data_type}")
         # print(f"Pixel data type: {Pixel_data_type}")
         # print(f"Image dimensions: {Image_shape}")
@@ -111,7 +111,7 @@ class ComputerVisionAssignment:
 
 if __name__ == "__main__":
 
-    assignment = ComputerVisionAssignment("original_image.png", "binary_image.png")
+    assignment = ComputerVisionAssignment("picket_fence.png", "binary_image.png")
 
     # Task 0: Check package versions
     assignment.check_package_versions()
