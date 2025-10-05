@@ -73,18 +73,13 @@ class ComputerVisionAssignment:
         # Shift down
         shifted_image = np.roll(shifted_image, shift=100, axis=0)
         shifted_image[:100, :] = 0
-        
-        cv2.imshow("Shifted Image", shifted_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
 
         return shifted_image
 
     def rotate_image(self):
-        """
-        Fill your code here
-
-        """
+        # Rotate image by 90*k degrees
+        rotated_image = np.rot90(self.image, k=1)
+        
         return rotated_image
 
     def similarity_transform(self, scale, theta, shift):
