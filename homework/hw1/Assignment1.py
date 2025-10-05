@@ -79,15 +79,18 @@ class ComputerVisionAssignment:
     def rotate_image(self):
         # Rotate image by 90*k degrees
         rotated_image = np.rot90(self.image, k=-1)
-        cv2.imshow("Rotated Image", rotated_image)
-        cv2.waitKey(0)
+
         return rotated_image
 
     def similarity_transform(self, scale, theta, shift):
-        """
-        Fill your code here
-
-        """
+        # Implement with OpenCV
+        height, width = self.image.shape[:2]
+        center = (width // 2, height // 2)
+        rotation_matrix = cv2.getRotationMatrix2D(center, -theta, scale)
+        rotation_matrix[0, 2] += shift[0]
+        rotation_matrix[1, 2] += shift[1]
+        transformed_image = cv2.warpAffine(self.image, rotation_matrix, (width, height))
+        
         return transformed_image
 
     def convert_to_grayscale(self):
