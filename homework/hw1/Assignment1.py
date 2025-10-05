@@ -66,10 +66,18 @@ class ComputerVisionAssignment:
         return foliage_image
 
     def shift_image(self):
-        """
-        Fill your code here
+        # Shift right
+        shifted_image = np.roll(self.image, shift=200, axis=1)
+        shifted_image[:, :200] = 0
 
-        """
+        # Shift down
+        shifted_image = np.roll(shifted_image, shift=100, axis=0)
+        shifted_image[:100, :] = 0
+        
+        cv2.imshow("Shifted Image", shifted_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
         return shifted_image
 
     def rotate_image(self):
