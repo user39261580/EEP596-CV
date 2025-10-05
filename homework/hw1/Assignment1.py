@@ -78,8 +78,9 @@ class ComputerVisionAssignment:
 
     def rotate_image(self):
         # Rotate image by 90*k degrees
-        rotated_image = np.rot90(self.image, k=1)
-        
+        rotated_image = np.rot90(self.image, k=-1)
+        cv2.imshow("Rotated Image", rotated_image)
+        cv2.waitKey(0)
         return rotated_image
 
     def similarity_transform(self, scale, theta, shift):
