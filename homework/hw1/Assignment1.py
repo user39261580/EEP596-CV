@@ -43,10 +43,13 @@ class ComputerVisionAssignment:
         return negative_image
 
     def swap_color_channels(self):
-        """
-        Fill your code here
+        red = self.image[:, :, 2]
+        blue = self.image[:, :, 0]
+        swapped_image = self.image.copy()
 
-        """
+        swapped_image[:, :, 0] = red
+        swapped_image[:, :, 2] = blue
+
         return swapped_image
 
     def foliage_detection(self):
