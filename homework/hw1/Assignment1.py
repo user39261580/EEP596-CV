@@ -30,10 +30,11 @@ class ComputerVisionAssignment:
         return Image_data_type, Pixel_data_type, Image_shape
 
     def create_red_image(self):
-        """
-        Fill your code here
-
-        """
+        height = 100
+        width = 100
+        red_image = np.zeros((height, width, 3), dtype=np.uint8)
+        red_image[:, :, 2] = 255  # Set the red channel to maximum
+        
         return red_image
 
     def create_photographic_negative(self):
