@@ -34,14 +34,12 @@ class ComputerVisionAssignment:
         width = 100
         red_image = np.zeros((height, width, 3), dtype=np.uint8)
         red_image[:, :, 2] = 255  # Set the red channel to maximum
-        
+
         return red_image
 
     def create_photographic_negative(self):
-        """
-        Fill your code here
+        negative_image = np.subtract(255, self.image)
 
-        """
         return negative_image
 
     def swap_color_channels(self):
