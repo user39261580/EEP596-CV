@@ -53,10 +53,16 @@ class ComputerVisionAssignment:
         return swapped_image
 
     def foliage_detection(self):
-        """
-        Fill your code here
+        blue = self.image[:, :, 0]
+        green = self.image[:, :, 1]
+        red = self.image[:, :, 2]
+        
+        # Create mask where green >= 50 AND red < 50 AND blue < 50
+        mask = (green >= 50) & (red < 50) & (blue < 50)
+        
+        # Create binary image and set data type to uint8
+        foliage_image = np.where(mask, 255, 0).astype(np.uint8)
 
-        """
         return foliage_image
 
     def shift_image(self):
