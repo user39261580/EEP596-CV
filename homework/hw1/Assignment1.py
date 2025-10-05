@@ -90,14 +90,14 @@ class ComputerVisionAssignment:
         rotation_matrix[0, 2] += shift[0]
         rotation_matrix[1, 2] += shift[1]
         transformed_image = cv2.warpAffine(self.image, rotation_matrix, (width, height))
-        
+
         return transformed_image
 
     def convert_to_grayscale(self):
-        """
-        Fill your code here
-
-        """
+        conversion_matrix = np.array([0.1, 0.6, 0.3])  # B, G, R weights
+        gray_image = np.dot(self.image, conversion_matrix)
+        gray_image = gray_image.astype(np.uint8)
+    
         return gray_image
 
     def compute_moments(self):
