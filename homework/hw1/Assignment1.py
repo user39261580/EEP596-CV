@@ -96,13 +96,10 @@ class ComputerVisionAssignment:
         conversion_matrix = np.array([0.1, 0.6, 0.3])  # B, G, R weights
         gray_image = np.dot(self.image, conversion_matrix)
         gray_image = np.round(gray_image).astype(np.uint8)
-        print(gray_image.shape)
     
         return gray_image
 
     def compute_moments(self):
-        # Use the grayscale intensity values (0-255) as the image 'mass' for raw moments.
-        # This makes M00 the sum of pixel intensities rather than a count of foreground pixels.
         mask = self.binary_image.astype(np.float64)
 
         # Image shape and coordinate grids
@@ -143,7 +140,7 @@ class ComputerVisionAssignment:
         # theta = 0.5 * arctan(2 * mu11 / (mu20 - mu02))
         theta_rad = 0.5 * np.arctan2((2 * mu11) / m00, (mu20 - mu02) / m00)
         
-        # Convert to degrees and make it clockwise w.r.t. positive horizontal axis
+        # Convert to degrees and make it clockwise
         orientation = np.degrees(theta_rad)
         
         # Compute eccentricity
@@ -159,9 +156,6 @@ class ComputerVisionAssignment:
         else:
             eccentricity = 0
         
-        # Load the image as BGR (use self.image which is already loaded in __init__)
-        # self.image should be loaded as BGR when the object is created
-        assert self.image is not None, "Image not loaded properly"
         glasses_bgr = self.image.copy()
         
         # Prepare ellipse parameters
