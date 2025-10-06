@@ -88,7 +88,7 @@ class ComputerVisionAssignment:
         rotation_matrix = cv2.getRotationMatrix2D(center, -theta, scale)
         rotation_matrix[0, 2] += shift[0]
         rotation_matrix[1, 2] += shift[1]
-        transformed_image = cv2.warpAffine(self.image, rotation_matrix, (width, height))
+        transformed_image = cv2.warpAffine(self.image, rotation_matrix, (width, height), flags=cv2.INTER_NEAREST)
 
         return transformed_image
 
