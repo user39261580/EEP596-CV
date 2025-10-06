@@ -30,10 +30,9 @@ class ComputerVisionAssignment:
         return Image_data_type, Pixel_data_type, Image_shape
 
     def create_red_image(self):
-        height = 100
-        width = 100
-        red_image = np.zeros((height, width, 3), dtype=np.uint8)
-        red_image[:, :, 2] = 255  # Set the red channel to maximum
+        red_image = self.image.copy()
+        red_image[:, :, 0] = 0 
+        red_image[:, :, 1] = 0
 
         return red_image
 
@@ -85,7 +84,7 @@ class ComputerVisionAssignment:
     def similarity_transform(self, scale, theta, shift):
         # Implement with OpenCV
         height, width = self.image.shape[:2]
-        center = (width // 2, height // 2)
+        center = (0, 0)
         rotation_matrix = cv2.getRotationMatrix2D(center, -theta, scale)
         rotation_matrix[0, 2] += shift[0]
         rotation_matrix[1, 2] += shift[1]
@@ -96,15 +95,36 @@ class ComputerVisionAssignment:
     def convert_to_grayscale(self):
         conversion_matrix = np.array([0.1, 0.6, 0.3])  # B, G, R weights
         gray_image = np.dot(self.image, conversion_matrix)
-        gray_image = gray_image.astype(np.uint8)
+        gray_image = np.round(gray_image).astype(np.uint8)
+        print(gray_image.shape)
     
         return gray_image
 
     def compute_moments(self):
-        """
-        Fill your code here
+        # Use the grayscale intensity values (0-255) as the image 'mass' for raw moments.
+        # This makes M00 the sum of pixel intensities rather than a count of foreground pixels.
+        mask = self.binary_image.astype(np.float64)
 
-        """
+        # Image shape and coordinate grids
+        height, width = mask.shape
+        ys = np.arange(height) # Get all y coordinates
+        xs = np.arange(width) # Get all x coordinates
+        x_grid, y_grid = np.meshgrid(xs, ys) # Make coordinate grids
+
+        # Raw moments
+        m00 = mask.sum()
+        m10 = (x_grid * mask).sum()
+        m01 = (y_grid * mask).sum()
+        x_bar = m10 / m00
+        y_bar = m01 / m00
+
+        # Centralized second-order moments
+        dx = x_grid - x_bar
+        dy = y_grid - y_bar
+        mu20 = (dx ** 2 * mask).sum()
+        mu02 = (dy ** 2 * mask).sum()
+        mu11 = (dx * dy * mask).sum()
+
         # Print the results
         # print("First-Order Moments:")
         # print(f"Standard (Raw) Moments: M00 = {m00}, M10 = {m10}, M01 = {m01}")
@@ -116,10 +136,45 @@ class ComputerVisionAssignment:
         return m00, m10, m01, x_bar, y_bar, mu20, mu02, mu11
 
     def compute_orientation_and_eccentricity(self):
-        """
-        Fill your code here
-
-        """
+        # Calculate moments
+        m00, m10, m01, x_bar, y_bar, mu20, mu02, mu11 = self.compute_moments()
+        
+        # Compute orientation (in radians first)
+        # theta = 0.5 * arctan(2 * mu11 / (mu20 - mu02))
+        theta_rad = 0.5 * np.arctan2((2 * mu11) / m00, (mu20 - mu02) / m00)
+        
+        # Convert to degrees and make it clockwise w.r.t. positive horizontal axis
+        orientation = np.degrees(theta_rad)
+        
+        # Compute eccentricity
+        # First compute the eigenvalues of the covariance matrix
+        term1 = (mu20 + mu02) / m00 / 2
+        term2 = np.sqrt(4 * (mu11 / m00)**2 + ((mu20 - mu02) / m00)**2) / 2
+        lambda1 = term1 + term2  # Major axis
+        lambda2 = term1 - term2  # Minor axis
+        
+        # Eccentricity: e = sqrt(1 - (b/a)^2) where a >= b
+        if lambda1 > 0:
+            eccentricity = np.sqrt(1 - lambda2 / lambda1)
+        else:
+            eccentricity = 0
+        
+        # Load the image as BGR (use self.image which is already loaded in __init__)
+        # self.image should be loaded as BGR when the object is created
+        assert self.image is not None, "Image not loaded properly"
+        glasses_bgr = self.image.copy()
+        
+        # Prepare ellipse parameters
+        center = (int(x_bar), int(y_bar))
+        
+        # Compute axes lengths from eigenvalues
+        # Semi-axes are sqrt(lambda) scaled by a factor
+        # Use 2*sqrt(lambda) to get axes that match the second moment
+        axes = (int(2 * np.sqrt(lambda1)), int(2 * np.sqrt(lambda2)))
+        
+        # Draw the ellipse in red (BGR: 0, 0, 255) with thickness 1
+        glasses_with_ellipse = glasses_bgr.copy()
+        cv2.ellipse(glasses_with_ellipse, center, axes, orientation, 0, 360, (0, 0, 255), 1)
 
         return orientation, eccentricity, glasses_with_ellipse
 
