@@ -52,10 +52,6 @@ class ComputerVisionAssignment():
     Apply Gaussian blur to the image iteratively.
     """
 
-    plt.imshow(self.cat_eye, cmap='gray')
-    plt.title("Original Image")
-    plt.show()
-
     kernel = np.array([0.25, 0.5, 0.25]) # 1D Gaussian kernel
     image = self.cat_eye.copy()
     h, w = image.shape
@@ -91,13 +87,22 @@ class ComputerVisionAssignment():
       
       # Store the blurred image
       self.blurred_images.append(image)
-
-    plt.imshow(image, cmap='gray')
-    plt.title("Blurred Image")
-    plt.show()
       
     #cv2.imwrite(f'gaussain blur {i}.jpg', image)
     return self.blurred_images
+
+  def gaussian_derivative_vertical(self):
+    # Define kernels
+    
+    # Store images
+    self.vDerive_images = []
+    for i in range(5):
+      # Apply horizontal and vertical convolution
+      image =
+      
+      self.vDerive_images.append(image)
+      #cv2.imwrite(f'vertical {i}.jpg', image)
+    return self.vDerive_images
 
 if __name__ == "__main__":
     ass = ComputerVisionAssignment()
