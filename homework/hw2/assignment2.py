@@ -63,7 +63,7 @@ class ComputerVisionAssignment():
       new_image = np.zeros_like(image, dtype=np.float32)
       for y in range(h):
           for x in range(w):
-              # Skip the border pixels
+              # Zero padding: treat out-of-bounds as 0
               if x == 0:
                 new_image[y, x] = kernel[1] * image[y, x] + kernel[2] * image[y, x+1]
               elif x == w-1:
@@ -76,7 +76,7 @@ class ComputerVisionAssignment():
       new_image = np.zeros_like(image, dtype=np.float32)
       for y in range(h):
           for x in range(w):
-              # Skip the border pixels
+              # Zero padding: treat out-of-bounds as 0
               if y == 0:
                 new_image[y, x] = kernel[1] * image[y, x] + kernel[2] * image[y+1, x]
               elif y == h-1:
@@ -93,16 +93,104 @@ class ComputerVisionAssignment():
 
   def gaussian_derivative_vertical(self):
     # Define kernels
+    kernel_h = np.array([0.25, 0.5, 0.25])  # Horizontal smoothing: 0.25 * [1 2 1]
+    kernel_v = np.array([0.5, 0, -0.5])     # Vertical derivative: 0.5 * [1 0 -1], flipped for convolution
     
     # Store images
     self.vDerive_images = []
     for i in range(5):
-      # Apply horizontal and vertical convolution
-      image =
+      # Get the blurred image from previous step
+      blurred_image = self.blurred_images[i]
+      h, w = blurred_image.shape
+      
+      # Horizontal smoothing convolution
+      temp_image = np.zeros_like(blurred_image, dtype=np.float32)
+      for y in range(h):
+          for x in range(w):
+              # Zero padding: treat out-of-bounds as 0
+              if x == 0:
+                temp_image[y, x] = kernel_h[1] * blurred_image[y, x] + kernel_h[2] * blurred_image[y, x+1]
+              elif x == w-1:
+                temp_image[y, x] = kernel_h[0] * blurred_image[y, x-1] + kernel_h[1] * blurred_image[y, x]
+              else:
+                temp_image[y, x] = kernel_h[0] * blurred_image[y, x-1] + kernel_h[1] * blurred_image[y, x] + kernel_h[2] * blurred_image[y, x+1]
+      
+      # Vertical derivative convolution
+      result_image = np.zeros_like(temp_image, dtype=np.float32)
+      for y in range(h):
+          for x in range(w):
+              # Zero padding: treat out-of-bounds as 0
+              if y == 0:
+                result_image[y, x] = kernel_v[1] * temp_image[y, x] + kernel_v[2] * temp_image[y+1, x]
+              elif y == h-1:
+                result_image[y, x] = kernel_v[0] * temp_image[y-1, x] + kernel_v[1] * temp_image[y, x]
+              else:
+                result_image[y, x] = kernel_v[0] * temp_image[y-1, x] + kernel_v[1] * temp_image[y, x] + kernel_v[2] * temp_image[y+1, x]
+      
+      # Convert to uint8: scale by 2, add offset 127, and clamp to [0, 255]
+      result_image = 2 * result_image + 127
+      result_image = np.clip(result_image, 0, 255)
+      image = result_image.astype(np.uint8)
       
       self.vDerive_images.append(image)
       #cv2.imwrite(f'vertical {i}.jpg', image)
+
+    # plt.imshow(self.vDerive_images[4], cmap='gray')
+    # plt.title('Vertical Derivative after 5 iterations')
+    # plt.show()
     return self.vDerive_images
+
+
+  def gaussian_derivative_horizontal(self):
+    #Define kernels
+    kernel_h = np.array([0.5, 0, -0.5])     # Horizontal derivative: 0.5 * [1 0 -1], flipped
+    kernel_v = np.array([0.25, 0.5, 0.25])  # Vertical smoothing: 0.25 * [1 2 1] for convolution
+
+    # Store images after computing horizontal derivative
+    self.hDerive_images = []
+
+    for i in range(5):
+      # Get the blurred image from previous step
+      blurred_image = self.blurred_images[i]
+      h, w = blurred_image.shape
+      
+      # Vertical smoothing convolution
+      temp_image = np.zeros_like(blurred_image, dtype=np.float32)
+      for y in range(h):
+          for x in range(w):
+              # Zero padding: treat out-of-bounds as 0
+              if y == 0:
+                temp_image[y, x] = kernel_v[1] * blurred_image[y, x] + kernel_v[2] * blurred_image[y+1, x]
+              elif y == h-1:
+                temp_image[y, x] = kernel_v[0] * blurred_image[y-1, x] + kernel_v[1] * blurred_image[y, x]
+              else:
+                temp_image[y, x] = kernel_v[0] * blurred_image[y-1, x] + kernel_v[1] * blurred_image[y, x] + kernel_v[2] * blurred_image[y+1, x]
+
+      # Horizontal derivative convolution
+      result_image = np.zeros_like(temp_image, dtype=np.float32)
+      for y in range(h):
+          for x in range(w):
+              # Zero padding: treat out-of-bounds as 0
+              if x == 0:
+                result_image[y, x] = kernel_h[1] * temp_image[y, x] + kernel_h[2] * temp_image[y, x+1]
+              elif x == w-1:
+                result_image[y, x] = kernel_h[0] * temp_image[y, x-1] + kernel_h[1] * temp_image[y, x]
+              else:
+                result_image[y, x] = kernel_h[0] * temp_image[y, x-1] + kernel_h[1] * temp_image[y, x] + kernel_h[2] * temp_image[y, x+1]
+      
+      
+      # Convert to uint8: scale by 2, add offset 127, and clamp to [0, 255]
+      result_image = 2 * result_image + 127
+      result_image = np.clip(result_image, 0, 255)
+      image = result_image.astype(np.uint8)
+
+      self.hDerive_images.append(image)
+      #cv2.imwrite(f'horizontal {i}.jpg', image)
+
+    # plt.imshow(self.hDerive_images[4], cmap='gray')
+    # plt.title('Horizontal Derivative after 5 iterations')
+    # plt.show()
+    return self.hDerive_images
 
 if __name__ == "__main__":
     ass = ComputerVisionAssignment()
@@ -112,11 +200,11 @@ if __name__ == "__main__":
     # Task 2 Convolution for Gaussian smoothing.
     blurred_imgs = ass.gaussian_blur()
 
-    # # Task 3 Convolution for differentiation along the vertical direction
-    # vertical_derivative = ass.gaussian_derivative_vertical()
+    # Task 3 Convolution for differentiation along the vertical direction
+    vertical_derivative = ass.gaussian_derivative_vertical()
 
     # # Task 4 Differentiation along another direction along the horizontal direction
-    # horizontal_derivative = ass.gaussian_derivative_horizontal()
+    horizontal_derivative = ass.gaussian_derivative_horizontal()
 
     # # Task 5 Gradient magnitude.
     # Gradient_magnitude = ass.gradient_magnitute()
