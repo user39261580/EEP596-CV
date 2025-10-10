@@ -12,6 +12,39 @@ class ComputerVisionAssignment():
     self.ant_img = cv2.imread('ant_outline.png')
     self.cat_eye = cv2.imread('cat_eye.jpg', cv2.IMREAD_GRAYSCALE)
 
+  def __convolve_1d(self, image, kernel, axis):
+    """
+    Convolution with a [3x1] kernel along specified axis (0 for vertical, 1 for horizontal).
+    """
+    h, w = image.shape
+    new_image = np.zeros_like(image, dtype=np.float32)
+    for y in range(h):
+        for x in range(w):
+            if axis == 1:  # horizontal
+                if x == 0:
+                    new_image[y, x] = kernel[1] * image[y, x] + kernel[2] * image[y, x+1]
+                elif x == w-1:
+                    new_image[y, x] = kernel[0] * image[y, x-1] + kernel[1] * image[y, x]
+                else:
+                    new_image[y, x] = kernel[0] * image[y, x-1] + kernel[1] * image[y, x] + kernel[2] * image[y, x+1]
+            elif axis == 0:  # vertical
+                if y == 0:
+                    new_image[y, x] = kernel[1] * image[y, x] + kernel[2] * image[y+1, x]
+                elif y == h-1:
+                    new_image[y, x] = kernel[0] * image[y-1, x] + kernel[1] * image[y, x]
+                else:
+                    new_image[y, x] = kernel[0] * image[y-1, x] + kernel[1] * image[y, x] + kernel[2] * image[y+1, x]
+    return new_image
+
+  def __convolve_separable(self, image, kernel1, kernel2, order='hv'):
+    if order == 'hv':
+        temp = self.__convolve_1d(image, kernel1, axis=1)
+        result = self.__convolve_1d(temp, kernel2, axis=0)
+    elif order == 'vh':
+        temp = self.__convolve_1d(image, kernel1, axis=0)
+        result = self.__convolve_1d(temp, kernel2, axis=1)
+    return result
+
   def floodfill(self, seed = (0, 0)):
 
     # Define the fill color (e.g., bright green)
@@ -59,35 +92,13 @@ class ComputerVisionAssignment():
     
     # Apply convolution 5 times
     for i in range(5):
-      # Horizontal convolution
-      new_image = np.zeros_like(image, dtype=np.float32)
-      for y in range(h):
-          for x in range(w):
-              # Zero padding: treat out-of-bounds as 0
-              if x == 0:
-                new_image[y, x] = kernel[1] * image[y, x] + kernel[2] * image[y, x+1]
-              elif x == w-1:
-                new_image[y, x] = kernel[0] * image[y, x-1] + kernel[1] * image[y, x]
-              else:
-                new_image[y, x] = kernel[0] * image[y, x-1] + kernel[1] * image[y, x] + kernel[2] * image[y, x+1]
-      image = np.round(new_image).astype(np.uint8)
+        image = self.__convolve_separable(image, kernel, kernel, 'hv')
+        image = np.round(image).astype(np.uint8)
+        self.blurred_images.append(image)
       
-      # Vertical convolution
-      new_image = np.zeros_like(image, dtype=np.float32)
-      for y in range(h):
-          for x in range(w):
-              # Zero padding: treat out-of-bounds as 0
-              if y == 0:
-                new_image[y, x] = kernel[1] * image[y, x] + kernel[2] * image[y+1, x]
-              elif y == h-1:
-                new_image[y, x] = kernel[0] * image[y-1, x] + kernel[1] * image[y, x]
-              else:
-                new_image[y, x] = kernel[0] * image[y-1, x] + kernel[1] * image[y, x] + kernel[2] * image[y+1, x]
-      image = np.round(new_image).astype(np.uint8)
-      
-      # Store the blurred image
-      self.blurred_images.append(image)
-      
+    plt.imshow(self.blurred_images[4], cmap='gray')
+    plt.title('Gaussain blur after 5 iterations')
+    plt.show()
     #cv2.imwrite(f'gaussain blur {i}.jpg', image)
     return self.blurred_images
 
@@ -103,29 +114,7 @@ class ComputerVisionAssignment():
       blurred_image = self.blurred_images[i]
       h, w = blurred_image.shape
       
-      # Horizontal smoothing convolution
-      temp_image = np.zeros_like(blurred_image, dtype=np.float32)
-      for y in range(h):
-          for x in range(w):
-              # Zero padding: treat out-of-bounds as 0
-              if x == 0:
-                temp_image[y, x] = kernel_h[1] * blurred_image[y, x] + kernel_h[2] * blurred_image[y, x+1]
-              elif x == w-1:
-                temp_image[y, x] = kernel_h[0] * blurred_image[y, x-1] + kernel_h[1] * blurred_image[y, x]
-              else:
-                temp_image[y, x] = kernel_h[0] * blurred_image[y, x-1] + kernel_h[1] * blurred_image[y, x] + kernel_h[2] * blurred_image[y, x+1]
-      
-      # Vertical derivative convolution
-      result_image = np.zeros_like(temp_image, dtype=np.float32)
-      for y in range(h):
-          for x in range(w):
-              # Zero padding: treat out-of-bounds as 0
-              if y == 0:
-                result_image[y, x] = kernel_v[1] * temp_image[y, x] + kernel_v[2] * temp_image[y+1, x]
-              elif y == h-1:
-                result_image[y, x] = kernel_v[0] * temp_image[y-1, x] + kernel_v[1] * temp_image[y, x]
-              else:
-                result_image[y, x] = kernel_v[0] * temp_image[y-1, x] + kernel_v[1] * temp_image[y, x] + kernel_v[2] * temp_image[y+1, x]
+      result_image = self.__convolve_separable(blurred_image, kernel_h, kernel_v, 'hv')
       
       # Convert to uint8: scale by 2, add offset 127, and clamp to [0, 255]
       result_image = 2 * result_image + 127
@@ -135,9 +124,9 @@ class ComputerVisionAssignment():
       self.vDerive_images.append(image)
       #cv2.imwrite(f'vertical {i}.jpg', image)
 
-    # plt.imshow(self.vDerive_images[4], cmap='gray')
-    # plt.title('Vertical Derivative after 5 iterations')
-    # plt.show()
+    plt.imshow(self.vDerive_images[4], cmap='gray')
+    plt.title('Vertical Derivative after 5 iterations')
+    plt.show()
     return self.vDerive_images
 
 
@@ -154,29 +143,7 @@ class ComputerVisionAssignment():
       blurred_image = self.blurred_images[i]
       h, w = blurred_image.shape
       
-      # Vertical smoothing convolution
-      temp_image = np.zeros_like(blurred_image, dtype=np.float32)
-      for y in range(h):
-          for x in range(w):
-              # Zero padding: treat out-of-bounds as 0
-              if y == 0:
-                temp_image[y, x] = kernel_v[1] * blurred_image[y, x] + kernel_v[2] * blurred_image[y+1, x]
-              elif y == h-1:
-                temp_image[y, x] = kernel_v[0] * blurred_image[y-1, x] + kernel_v[1] * blurred_image[y, x]
-              else:
-                temp_image[y, x] = kernel_v[0] * blurred_image[y-1, x] + kernel_v[1] * blurred_image[y, x] + kernel_v[2] * blurred_image[y+1, x]
-
-      # Horizontal derivative convolution
-      result_image = np.zeros_like(temp_image, dtype=np.float32)
-      for y in range(h):
-          for x in range(w):
-              # Zero padding: treat out-of-bounds as 0
-              if x == 0:
-                result_image[y, x] = kernel_h[1] * temp_image[y, x] + kernel_h[2] * temp_image[y, x+1]
-              elif x == w-1:
-                result_image[y, x] = kernel_h[0] * temp_image[y, x-1] + kernel_h[1] * temp_image[y, x]
-              else:
-                result_image[y, x] = kernel_h[0] * temp_image[y, x-1] + kernel_h[1] * temp_image[y, x] + kernel_h[2] * temp_image[y, x+1]
+      result_image = self.__convolve_separable(blurred_image, kernel_v, kernel_h, 'vh')
       
       
       # Convert to uint8: scale by 2, add offset 127, and clamp to [0, 255]
@@ -187,9 +154,9 @@ class ComputerVisionAssignment():
       self.hDerive_images.append(image)
       #cv2.imwrite(f'horizontal {i}.jpg', image)
 
-    # plt.imshow(self.hDerive_images[4], cmap='gray')
-    # plt.title('Horizontal Derivative after 5 iterations')
-    # plt.show()
+    plt.imshow(self.hDerive_images[4], cmap='gray')
+    plt.title('Horizontal Derivative after 5 iterations')
+    plt.show()
     return self.hDerive_images
 
 if __name__ == "__main__":
