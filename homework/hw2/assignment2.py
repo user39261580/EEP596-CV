@@ -242,30 +242,63 @@ class ComputerVisionAssignment():
       self.scipy_smooth.append(image)
       #cv2.imwrite(f'scipy smooth {i}.jpg', image)
 
-    plt.imshow(self.scipy_smooth[4], cmap='gray')
-    plt.title('Scipy Convolution after 5 iterations')
-    plt.show()
+    # plt.imshow(self.scipy_smooth[4], cmap='gray')
+    # plt.title('Scipy Convolution after 5 iterations')
+    # plt.show()
     return self.scipy_smooth
+
+  def box_filter(self, num_repetitions):
+    # Define box filter
+    box_filter = [1, 1, 1]
+    out = [1, 1, 1]
+
+    for _ in range(num_repetitions):
+      # Perform 1D convolution manually
+      # Result will have length N + M - 1
+      N = len(out)
+      M = len(box_filter)
+      result_length = N + M - 1
+      result = [0] * result_length
+      
+      # Manual convolution: for each position in output
+      for i in range(result_length):
+        # Sum over all valid overlapping positions
+        for j in range(M):
+          # Check if the index is valid in the 'out' array
+          out_index = i - j
+          if 0 <= out_index < N:
+            result[i] += out[out_index] * box_filter[j]
+      
+      out = result
+
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(out, 'bo-', linewidth=2, markersize=8)
+    # plt.title(f'Box Filter after {num_repetitions} Convolutions (Approximates Gaussian)')
+    # plt.xlabel('Index')
+    # plt.ylabel('Value')
+    # plt.grid(True, alpha=0.3)
+    # plt.show()
+    return out
 
 if __name__ == "__main__":
     ass = ComputerVisionAssignment()
-    # # Task 1 floodfill
-    # floodfill_img = ass.floodfill((100, 100))
+    # Task 1 floodfill
+    floodfill_img = ass.floodfill((100, 100))
 
     # Task 2 Convolution for Gaussian smoothing.
     blurred_imgs = ass.gaussian_blur()
 
     # Task 3 Convolution for differentiation along the vertical direction
-    # vertical_derivative = ass.gaussian_derivative_vertical()
+    vertical_derivative = ass.gaussian_derivative_vertical()
 
-    # # Task 4 Differentiation along another direction along the horizontal direction
-    # horizontal_derivative = ass.gaussian_derivative_horizontal()
+    # Task 4 Differentiation along another direction along the horizontal direction
+    horizontal_derivative = ass.gaussian_derivative_horizontal()
 
-    # # Task 5 Gradient magnitude.
-    # Gradient_magnitude = ass.gradient_magnitute()
+    # Task 5 Gradient magnitude.
+    Gradient_magnitude = ass.gradient_magnitute()
 
-    # # Task 6 Built-in convolution
+    # Task 6 Built-in convolution
     scipy_convolve = ass.scipy_convolve()
 
     # # Task 7 Repeated box filtering
-    # box_filter = ass.box_filter(5)
+    box_filter = ass.box_filter(5)
