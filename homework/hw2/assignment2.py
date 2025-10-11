@@ -96,9 +96,9 @@ class ComputerVisionAssignment():
         image = np.round(image).astype(np.uint8)
         self.blurred_images.append(image)
       
-    plt.imshow(self.blurred_images[4], cmap='gray')
-    plt.title('Gaussain blur after 5 iterations')
-    plt.show()
+    # plt.imshow(self.blurred_images[4], cmap='gray')
+    # plt.title('Gaussain blur after 5 iterations')
+    # plt.show()
     #cv2.imwrite(f'gaussain blur {i}.jpg', image)
     return self.blurred_images
 
@@ -124,9 +124,9 @@ class ComputerVisionAssignment():
       self.vDerive_images.append(image)
       #cv2.imwrite(f'vertical {i}.jpg', image)
 
-    plt.imshow(self.vDerive_images[4], cmap='gray')
-    plt.title('Vertical Derivative after 5 iterations')
-    plt.show()
+    # plt.imshow(self.vDerive_images[4], cmap='gray')
+    # plt.title('Vertical Derivative after 5 iterations')
+    # plt.show()
     return self.vDerive_images
 
 
@@ -154,10 +154,66 @@ class ComputerVisionAssignment():
       self.hDerive_images.append(image)
       #cv2.imwrite(f'horizontal {i}.jpg', image)
 
-    plt.imshow(self.hDerive_images[4], cmap='gray')
-    plt.title('Horizontal Derivative after 5 iterations')
-    plt.show()
+    # plt.imshow(self.hDerive_images[4], cmap='gray')
+    # plt.title('Horizontal Derivative after 5 iterations')
+    # plt.show()
     return self.hDerive_images
+
+  def gradient_magnitute(self):
+    # Store the computed gradient magnitute
+    self.gdMagnitute_images =[]
+
+    # Define kernels for vDerive
+    vDerive_kernel_h = np.array([0.25, 0.5, 0.25])  # Horizontal smoothing: 0.25 * [1 2 1]
+    vDerive_kernel_v = np.array([0.5, 0, -0.5])     # Vertical derivative: 0.5 * [1 0 -1], flipped for convolution
+    
+    # Store images
+    vDerive_images = []
+    for i in range(5):
+      # Get the blurred image from previous step
+      blurred_image = self.blurred_images[i]
+      h, w = blurred_image.shape
+      
+      result_image = self.__convolve_separable(blurred_image, vDerive_kernel_h, vDerive_kernel_v, 'hv')
+      
+      vDerive_images.append(result_image)
+      #cv2.imwrite(f'vertical {i}.jpg', image)
+
+
+    #Define kernels for hDerive
+    hDerive_kernel_h = np.array([0.5, 0, -0.5])     # Horizontal derivative: 0.5 * [1 0 -1], flipped
+    hDerive_kernel_v = np.array([0.25, 0.5, 0.25])  # Vertical smoothing: 0.25 * [1 2 1] for convolution
+
+    # Store images after computing horizontal derivative
+    hDerive_images = []
+
+    for i in range(5):
+      # Get the blurred image from previous step
+      blurred_image = self.blurred_images[i]
+      h, w = blurred_image.shape
+      
+      result_image = self.__convolve_separable(blurred_image, hDerive_kernel_v, hDerive_kernel_h, 'vh')
+
+      hDerive_images.append(result_image)
+
+    for i, (vimg, himg) in enumerate(zip(vDerive_images, hDerive_images)):
+      # Compute gradient magnitude using Manhattan distance: abs(gx) + abs(gy)
+      gradient_magnitude = np.abs(himg) + np.abs(vimg)
+      
+      # Scale by 4 and clamp to [0, 255]
+      gradient_magnitude = 4 * gradient_magnitude
+      gradient_magnitude = np.clip(gradient_magnitude, 0, 255)
+      
+      # Convert to uint8
+      image = gradient_magnitude.astype(np.uint8)
+      
+      self.gdMagnitute_images.append(image)
+      #cv2.imwrite(f'gradient {i}.jpg', image)
+    
+    # plt.imshow(self.gdMagnitute_images[4], cmap='gray')
+    # plt.title('Gradient Magnitude after 5 iterations')
+    # plt.show()
+    return self.gdMagnitute_images
 
 if __name__ == "__main__":
     ass = ComputerVisionAssignment()
@@ -174,7 +230,7 @@ if __name__ == "__main__":
     horizontal_derivative = ass.gaussian_derivative_horizontal()
 
     # # Task 5 Gradient magnitude.
-    # Gradient_magnitude = ass.gradient_magnitute()
+    Gradient_magnitude = ass.gradient_magnitute()
 
     # # Task 6 Built-in convolution
     # scipy_convolve = ass.scipy_convolve()
