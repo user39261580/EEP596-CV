@@ -129,7 +129,6 @@ class ComputerVisionAssignment():
     # plt.show()
     return self.vDerive_images
 
-
   def gaussian_derivative_horizontal(self):
     #Define kernels
     kernel_h = np.array([0.5, 0, -0.5])     # Horizontal derivative: 0.5 * [1 0 -1], flipped
@@ -215,25 +214,58 @@ class ComputerVisionAssignment():
     # plt.show()
     return self.gdMagnitute_images
 
+  def scipy_convolve(self):
+    # Define the 2D smoothing kernel (horizontal smoothing)
+    kernel_h = np.array([[0.25, 0.5, 0.25]])  # Horizontal: 0.25 * [1 2 1]
+    
+    # Define the 2D differentiating kernel (vertical derivative)
+    kernel_v = np.array([[0.5], [0], [-0.5]])  # Vertical: 0.5 * [1 0 -1], flipped for convolution
+    
+    # Combine into a 2D kernel: outer product of horizontal smoothing and vertical derivative
+    kernel_2d = kernel_v @ kernel_h  # Results in a 3x3 kernel
+    
+    # Store outputs
+    self.scipy_smooth = []
+
+    for i in range(5):
+      # Get the blurred image from previous step (same as gaussian_derivative_vertical)
+      blurred_image = self.blurred_images[i]
+      
+      # Perform convolution using scipy with zero padding (mode='same' maintains shape)
+      result_image = scipy.signal.convolve2d(blurred_image, kernel_2d, mode='same', boundary='fill', fillvalue=0)
+      
+      # Convert to uint8: scale by 2, add offset 127, and clamp to [0, 255]
+      result_image = 2 * result_image + 127
+      result_image = np.clip(result_image, 0, 255)
+      image = result_image.astype(np.uint8)
+      
+      self.scipy_smooth.append(image)
+      #cv2.imwrite(f'scipy smooth {i}.jpg', image)
+
+    plt.imshow(self.scipy_smooth[4], cmap='gray')
+    plt.title('Scipy Convolution after 5 iterations')
+    plt.show()
+    return self.scipy_smooth
+
 if __name__ == "__main__":
     ass = ComputerVisionAssignment()
     # # Task 1 floodfill
-    floodfill_img = ass.floodfill((100, 100))
+    # floodfill_img = ass.floodfill((100, 100))
 
     # Task 2 Convolution for Gaussian smoothing.
     blurred_imgs = ass.gaussian_blur()
 
     # Task 3 Convolution for differentiation along the vertical direction
-    vertical_derivative = ass.gaussian_derivative_vertical()
+    # vertical_derivative = ass.gaussian_derivative_vertical()
 
     # # Task 4 Differentiation along another direction along the horizontal direction
-    horizontal_derivative = ass.gaussian_derivative_horizontal()
+    # horizontal_derivative = ass.gaussian_derivative_horizontal()
 
     # # Task 5 Gradient magnitude.
-    Gradient_magnitude = ass.gradient_magnitute()
+    # Gradient_magnitude = ass.gradient_magnitute()
 
     # # Task 6 Built-in convolution
-    # scipy_convolve = ass.scipy_convolve()
+    scipy_convolve = ass.scipy_convolve()
 
     # # Task 7 Repeated box filtering
     # box_filter = ass.box_filter(5)
