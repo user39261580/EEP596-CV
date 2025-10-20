@@ -41,7 +41,11 @@ class Assignment3:
         return saturated_img
 
     def add_noise(self, torch_img):
-
+        noise = torch.randn(torch_img.shape) * 100.0 # Generate Gaussian noise
+        noisy_img = torch_img + noise
+        noisy_img = noisy_img / 255.0 # Range [0,1] expected
+        noisy_img = torch.clamp(noisy_img, 0, 1) # Clamp to [0, 1]
+        
         return noisy_img
 
     def normalization_image(self, img):
