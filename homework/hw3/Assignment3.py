@@ -10,14 +10,33 @@ class Assignment3:
         pass
 
     def torch_image_conversion(self, torch_img):
+        # Convert BGR to RGB
+        img_rgb = cv.cvtColor(torch_img, cv.COLOR_BGR2RGB)
+        torch_img = torch.from_numpy(img_rgb).float()
+        
+        # # Visualize the result
+        # print(f"Torch tensor shape: {torch_img.shape}")
+        # print(f"Torch tensor dtype: {torch_img.dtype}")
+        # print(f"Min value: {torch_img.min().item()}, Max value: {torch_img.max().item()}")
+        # plt.figure(figsize=(10, 8))
+        # plt.imshow(torch_img.numpy().astype(np.uint8))
+        # plt.title("Converted PyTorch Image (RGB)")
+        # plt.axis('off')
+        # plt.tight_layout()
+        # plt.show()
 
         return torch_img
 
     def brighten(self, torch_img):
+        # Add a constant brightness value and clamp to valid image range
+        bright_img = torch_img + 100
 
         return bright_img
 
     def saturation_arithmetic(self, img):
+        torch_img = self.torch_image_conversion(img).to(torch.uint8) # Convert to uint8
+        bright_img = self.brighten(torch_img)
+        saturated_img = torch.clamp(bright_img, 0, 255) # Clamp to [0, 255]
 
         return saturated_img
 
@@ -37,13 +56,13 @@ class Assignment3:
 
         return rearrange
 
-    def chain_rule(self, x, y, z):
+    # def chain_rule(self, x, y, z):
 
-        return df_dx, df_dy, df_dz, df_dq
+    #     return df_dx, df_dy, df_dz, df_dq
 
-    def relu(self, x, w):
+    # def relu(self, x, w):
 
-        return dx, dw
+    #     return dx, dw
 
 
 if __name__ == "__main__":
@@ -56,5 +75,5 @@ if __name__ == "__main__":
     image_norm = assign.normalization_image(img)
     ImageNet_norm = assign.Imagenet_norm(img)
     rearrange = assign.dimension_rearrange(img)
-    df_dx, df_dy, df_dz, df_dq = assign.chain_rule(x=-2.0, y=5.0, z=-4.0)
-    dx, dw = assign.relu(x=[-1.0, 2.0], w=[2.0, -3.0, -3.0])
+    # df_dx, df_dy, df_dz, df_dq = assign.chain_rule(x=-2.0, y=5.0, z=-4.0)
+    # dx, dw = assign.relu(x=[-1.0, 2.0], w=[2.0, -3.0, -3.0])
