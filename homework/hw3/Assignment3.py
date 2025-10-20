@@ -81,6 +81,25 @@ class Assignment3:
         rearrange = rearrange.unsqueeze(0) # CxHxW -> NxCxHxW (N=1)
         
         return rearrange
+    
+    def stride(self, img):
+        # Define Scharr_x filter and flip it for convolution
+        scharr_x = torch.tensor([[-3, 0, 3],
+                                [-10, 0, 10],
+                                [-3, 0, 3]], dtype=torch.float32)
+        scharr_x = torch.flip(scharr_x, dims=[0, 1])
+        
+        img_tensor = torch.from_numpy(img).float() # Convert to float tensor
+        
+        # Reshape to (1, 1, H, W) for conv2d
+        img_tensor = img_tensor.unsqueeze(0).unsqueeze(0)
+        kernel = scharr_x.unsqueeze(0).unsqueeze(0)
+        
+        strided_img = torch.nn.functional.conv2d(img_tensor, kernel, stride=2, padding=1) # Apply conv as: stride=2, padding=1
+        
+        strided_img = strided_img.squeeze(0).squeeze(0) # Remove batch and channel dimensions
+
+        return strided_img
 
     # def chain_rule(self, x, y, z):
 
@@ -93,6 +112,7 @@ class Assignment3:
 
 if __name__ == "__main__":
     img = cv.imread("original_image.png")
+    cat_eye = cv.imread('cat_eye.jpg', cv.IMREAD_GRAYSCALE)
     assign = Assignment3()
     torch_img = assign.torch_image_conversion(img)
     bright_img = assign.brighten(torch_img)
@@ -101,5 +121,6 @@ if __name__ == "__main__":
     image_norm = assign.normalization_image(img)
     ImageNet_norm = assign.Imagenet_norm(img)
     rearrange = assign.dimension_rearrange(img)
+    strided_img = assign.stride(cat_eye)
     # df_dx, df_dy, df_dz, df_dq = assign.chain_rule(x=-2.0, y=5.0, z=-4.0)
     # dx, dw = assign.relu(x=[-1.0, 2.0], w=[2.0, -3.0, -3.0])
