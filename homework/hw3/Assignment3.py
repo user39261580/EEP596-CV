@@ -74,7 +74,12 @@ class Assignment3:
         return ImageNet_norm
 
     def dimension_rearrange(self, img):
-
+        img_rgb = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+        img_tensor = torch.from_numpy(img_rgb).float() # Convert to float tensor
+        
+        rearrange = img_tensor.permute(2, 0, 1) # HxWxC -> CxHxW
+        rearrange = rearrange.unsqueeze(0) # CxHxW -> NxCxHxW (N=1)
+        
         return rearrange
 
     # def chain_rule(self, x, y, z):
