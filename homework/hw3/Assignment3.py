@@ -10,9 +10,8 @@ class Assignment3:
         pass
 
     def torch_image_conversion(self, torch_img):
-        # Convert BGR to RGB
-        img_rgb = cv.cvtColor(torch_img, cv.COLOR_BGR2RGB)
-        torch_img = torch.from_numpy(img_rgb).float()
+        img_rgb = cv.cvtColor(torch_img, cv.COLOR_BGR2RGB) # Convert BGR to RGB
+        torch_img = torch.from_numpy(img_rgb).float() # Convert to float tensor
         
         # # Visualize the result
         # print(f"Torch tensor shape: {torch_img.shape}")
@@ -49,10 +48,28 @@ class Assignment3:
         return noisy_img
 
     def normalization_image(self, img):
+        img_rgb = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+        img_tensor = torch.from_numpy(img_rgb).double() / 255.0 # Convert to float64 tensor and normalize to [0, 1]
+
+        # Calculate mean and std for each channel
+        mean = torch.mean(img_tensor, dim=(0, 1))
+        std = torch.std(img_tensor, dim=(0, 1))
+
+        image_norm = (img_tensor - mean) / std # Standardization
+        image_norm = torch.clamp(image_norm, -1, 1) # Limit range
 
         return image_norm
 
     def Imagenet_norm(self, img):
+        img_rgb = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+        img_tensor = torch.from_numpy(img_rgb).double() / 255.0 # Convert to float64 tensor and normalize to [0, 1]
+
+        # Mean and std from ImageNet dataset
+        mean = torch.tensor([0.485, 0.456, 0.406], dtype=torch.float64)
+        std = torch.tensor([0.229, 0.224, 0.225], dtype=torch.float64)
+
+        ImageNet_norm = (img_tensor - mean) / std # Standardization
+        ImageNet_norm = torch.clamp(ImageNet_norm, -1, 1)  # Limit range
 
         return ImageNet_norm
 
