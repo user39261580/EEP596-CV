@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Large datasets
+homework/hw4/cifar10/
+
