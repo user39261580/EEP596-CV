@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>EEP 596 Computer Vision - Assignment 4 Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 20px;
+        }
+        .info-box {
+            background-color: #ecf0f1;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .value {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin: 20px 0;
+            border: 1px solid #bdc3c7;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>EEP 596 Computer Vision - Assignment 4 Report</h1>
+    
+
+    <div class="section">
+        <h2>Task 1: CIFAR-10 Dataset</h2>
+        
+        <h3>Dataset Statistics</h3>
+        <div class="info-box">
+            <table>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>num_train_batches</td>
+                    <td class="value">5</td>
+                </tr>
+                <tr>
+                    <td>num_test_batches</td>
+                    <td class="value">1</td>
+                </tr>
+                <tr>
+                    <td>num_img_per_batch</td>
+                    <td class="value">10000</td>
+                </tr>
+                <tr>
+                    <td>num_train_img</td>
+                    <td class="value">50000</td>
+                </tr>
+                <tr>
+                    <td>num_test_img</td>
+                    <td class="value">10000</td>
+                </tr>
+                <tr>
+                    <td>size_batch_bytes (KB)</td>
+                    <td class="value">30000 KB (~29.3 MB)</td>
+                </tr>
+                <tr>
+                    <td>size_image_bytes (KB)</td>
+                    <td class="value">3.072 KB (3072 bytes for 32x32x3)</td>
+                </tr>
+                <tr>
+                    <td>size_batchimage_bytes (10k images, KB)</td>
+                    <td class="value">30720 KB (~30 MB)</td>
+                </tr>
+            </table>
+        </div>
+        
+        <h3>1a. Sample Mini-batch (4 random images)</h3>
+
+        <img src="task1a_sample_batch.png" alt="Sample mini-batch">
+        <p><strong>Image tensor shape:</strong> torch.Size([4, 3, 32, 32])</p>
+        <p><strong>Labels tensor shape:</strong> torch.Size([4])</p>
+
+    </div>
+
+    <div class="section">
+        <h2>Task 2: Train Classifier</h2>
+        
+        <h3>Network Architecture</h3>
+        <pre>
+Net(
+  (conv1): Conv2d(3, 6, kernel_size=(5, 5), stride=(1, 1))
+  (pool): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+  (conv2): Conv2d(6, 16, kernel_size=(5, 5), stride=(1, 1))
+  (fc1): Linear(in_features=400, out_features=120, bias=True)
+  (fc2): Linear(in_features=120, out_features=84, bias=True)
+  (fc3): Linear(in_features=84, out_features=10, bias=True)
+)
+        </pre>
+        
+        <h3>Test Accuracy</h3>
+
+        <div class="info-box">
+            <p><strong>Test Accuracy on 10,000 images:</strong> <span class="value">52.42%</span></p>
+            <p>Model weights loaded from: <code>cifar_net_2epoch.pth</code></p>
+        </div>
+
+    </div>
+
+    <div class="section">
+        <h2>Task 3: Visualize Weights</h2>
+
+        <h3>3a. First Layer (conv1) Weights</h3>
+        <div class="info-box">
+            <p><strong>Shape:</strong> [6, 3, 5, 5]</p>
+            <p><strong>Description:</strong> 6 filters, 3 input channels, 5x5 kernel size</p>
+        </div>
+
+        <!-- <img src="task3a_conv1_weights.png" alt="First layer weights visualization"> -->
+
+        <h3>3b. Second Layer (conv2) Weights</h3>
+        <div class="info-box">
+            <p><strong>Shape:</strong> [16, 6, 5, 5]</p>
+            <p><strong>Description:</strong> 16 filters, 6 input channels, 5x5 kernel size</p>
+        </div>
+
+        <!-- <img src="task3b_conv2_weights.png" alt="Second layer weights visualization">
+        <p><em>Note: Showing first input channel only for clarity (16 filters total)</em></p> -->
+
+    </div>
+
+    <div class="section">
+        <h2>Task 4: Hyperparameter Sweep</h2>
+        
+        <h3>4c. Training with Different Learning Rates</h3>
+        <p>The network was trained for 2 epochs using three different learning rates: 0.01, 0.001, and 0.0001. 
+        Training loss and error rates were recorded every 2000 iterations.</p>
+
+        <h4>i. Training Loss vs Iteration</h4>
+        <img src="training_loss.png" alt="Training Loss">
+        
+        <h4>ii. Training Error vs Iteration</h4>
+        <img src="training_error.png" alt="Training Error">
+        
+        <h4>iii. Test Error vs Iteration</h4>
+        <img src="test_error.png" alt="Test Error">
+        
+        <h3>4d. Results Description</h3>
+        <div class="info-box">
+            <h4>Observations:</h4>
+            <ul>
+                <li><strong>Learning Rate = 0.01 (High):</strong> Higher learning rate didn't bring faster convergence. 
+                Shows severe oscillation throughout training. In final iterations, it even jumps out of the current valley, 
+                making the result worse than the other two learning rates.</li>
+                
+                <li><strong>Learning Rate = 0.001 (Medium):</strong> Shows steady, consistent decrease in both 
+                training loss and error. This learning rate provides a good balance between convergence speed 
+                and stability.</li>
+                
+                <li><strong>Learning Rate = 0.0001 (Low):</strong> Training progresses slowly with gradual 
+                decrease in loss and error. The convergence is more stable but requires more iterations to 
+                reach comparable performance.</li>
+                
+                <li><strong>Test Error:</strong> The test error patterns generally follow the training error trends, 
+                indicating the models generalize reasonably well without severe overfitting. The medium learning 
+                rate (0.001) typically achieves the best test performance within 2 epochs.</li>
+                
+                <li><strong>Conclusion:</strong> The learning rate of 0.001 appears to be optimal for this network 
+                and dataset, providing stable convergence and good test performance within the limited training time.</li>
+            </ul>
+        </div>
+
+    </div>
+    
+    <hr>
+    <p style="text-align: center; color: #7f8c8d;">End of Report</p>
+    
+</body>
+</html>
