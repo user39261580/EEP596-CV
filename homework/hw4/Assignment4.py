@@ -207,20 +207,173 @@ def get_second_layer_weights():
     second_weight = net.conv2.weight.data.clone()  # Get conv2 weights (exclude bias)
     return second_weight
 
-# def hyperparameter_sweep():
-#     '''
-#     Reuse the CNN and training code from Question 2
-#     Train the network three times using different learning rates: 0.01, 0.001, and 0.0001
-#     During training, record the training loss every 2000 iterations
-#     compute and record the training and test errors every 2000 iterations by randomly sampling 1000 images from each dataset
-#     After training, plot three curves
-#     '''
-#     return None
+def hyperparameter_sweep():
+    '''
+    Reuse the CNN and training code from Question 2
+    Train the network three times using different learning rates: 0.01, 0.001, and 0.0001
+    During training, record the training loss every 2000 iterations
+    compute and record the training and test errors every 2000 iterations by randomly sampling 1000 images from each dataset
+    After training, plot three curves
+    '''
+
+    # Define three learning rates
+    learning_rates = [0.01, 0.001, 0.0001]
+
+    # Store results
+    results = {}
+
+    # Prepare dataset
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    
+    trainset = torchvision.datasets.CIFAR10(
+        root='./cifar10', train=True, download=True, transform=transform
+    )
+    trainloader = torch.utils.data.DataLoader(
+        trainset, batch_size=4, shuffle=True, num_workers=2
+    )
+    
+    testset = torchvision.datasets.CIFAR10(
+        root='./cifar10', train=False, download=True, transform=transform
+    )
+
+    # Train for each learning rate
+    for lr in learning_rates:
+        print(f'\nlearning rate = {lr}')
+
+        # Create a new network
+        net = Net()
+        net.to(device) # Move to GPU if available
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+
+        # Store results
+        train_losses = []
+        train_errors = []
+        test_errors = []
+        iterations = []
+        
+        iteration = 0
+
+        # Train for 2 epochs
+        for epoch in range(2):
+            for i, data in enumerate(trainloader, 0):
+                inputs, labels = data
+                inputs, labels = inputs.to(device), labels.to(device)  # Move to GPU if available
+
+                optimizer.zero_grad()
+                outputs = net(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+                
+                iteration += 1
+
+                if iteration % 2000 == 0:
+                    # Record training loss
+                    train_losses.append(loss.item())
+                    iterations.append(iteration)
+
+                    # Compute training error (randomly sample 1000 images)
+                    train_error = compute_error(net, trainset, 1000)
+                    train_errors.append(train_error)
+
+                    # Compute test error (randomly sample 1000 images)
+                    test_error = compute_error(net, testset, 1000)
+                    test_errors.append(test_error)
+                    
+                    print(f'Iter {iteration}: Loss={loss.item():.3f}, '
+                          f'Train Error={train_error:.2f}%, Test Error={test_error:.2f}%')
+        
+        results[lr] = {
+            'iterations': iterations,
+            'train_losses': train_losses,
+            'train_errors': train_errors,
+            'test_errors': test_errors
+        }
+
+    # Plot three curves
+    plot_results(results)
+    
+    return None
+
+def compute_error(net, dataset, num_samples=1000):
+    """Compute error rate (random sampling)"""
+    net.eval()
+    net.to(device)  # Move to GPU if available
+    
+    # Randomly sample num_samples examples
+    indices = torch.randperm(len(dataset))[:num_samples]
+    subset = torch.utils.data.Subset(dataset, indices)
+    loader = torch.utils.data.DataLoader(subset, batch_size=4, shuffle=False)
+    
+    correct = 0
+    total = 0
+    
+    with torch.no_grad():
+        for data in loader:
+            images, labels = data
+            images, labels = images.to(device), labels.to(device)  # Move to GPU if available
+            outputs = net(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    
+    error = 100.0 - (100.0 * correct / total)
+    net.train()  # Set back to training mode
+    return error
+
+def plot_results(results):
+    # Plot 1: Training Loss
+    plt.figure(figsize=(8, 6))
+    for lr, data in results.items():
+        plt.plot(data['iterations'], data['train_losses'], 
+                label=f'LR={lr}', marker='o')
+    plt.xlabel('Iteration')
+    plt.ylabel('Training Loss')
+    plt.title('Training Loss vs Iteration')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig('./report/training_loss.png', dpi=300)
+    plt.close()
+
+    # Plot 2: Training Error
+    plt.figure(figsize=(8, 6))
+    for lr, data in results.items():
+        plt.plot(data['iterations'], data['train_errors'], 
+                label=f'LR={lr}', marker='o')
+    plt.xlabel('Iteration')
+    plt.ylabel('Training Error (%)')
+    plt.title('Training Error vs Iteration')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig('./report/training_error.png', dpi=300)
+    plt.close()
+
+    # Plot 3: Test Error
+    plt.figure(figsize=(8, 6))
+    for lr, data in results.items():
+        plt.plot(data['iterations'], data['test_errors'], 
+                label=f'LR={lr}', marker='o')
+    plt.xlabel('Iteration')
+    plt.ylabel('Test Error (%)')
+    plt.title('Test Error vs Iteration')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig('./report/test_error.png', dpi=300)
+    plt.close()
+
 
 if __name__ == "__main__":
     # images, labels = CIFAR10_dataset_a()
     # train_classifier()
     # evalNetwork()
     # convert_cuda_weights_to_CPU('./cifar_net_2epoch_gpu.pth')
-    weight1 = get_first_layer_weights()
-    weight2 = get_second_layer_weights()
+    # weight1 = get_first_layer_weights()
+    # weight2 = get_second_layer_weights()
+    hyperparameter_sweep()
