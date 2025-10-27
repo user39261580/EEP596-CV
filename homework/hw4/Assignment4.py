@@ -135,38 +135,77 @@ def train_classifier():
     print('Finished Training')
     
     # Save the trained model weights
-    PATH = './cifar_net_2epoch.pth'
+    PATH = './cifar_net_2epoch_gpu.pth'
     torch.save(net.state_dict(), PATH)
 
+def evalNetwork():
+    # Initialize the network and load trained weights
+    PATH = './cifar_net_2epoch.pth'
+    net = Net()
+    net.load_state_dict(torch.load(PATH, map_location=device)) # Load weights to the appropriate device
+    net.to(device) # Move to GPU if available
+    net.eval()  #  Set to evaluation mode
 
-# def evalNetwork():
-#     # Initialized the network and load from the saved weights
-#     PATH = './cifar_net_2epoch.pth'
-#     net = Net()
-#     net.load_state_dict(torch.load(PATH))
-#     # Loads dataset
-#     batch_size=4
-#     transform = 
-#     testset = 
-#     testloader =
-#     correct = 0
-#     total = 0
-#     # since we're not training, we don't need to calculate the gradients for our outputs
-#     with torch.no_grad():
-#         for data in testloader:
-#             # Evaluates samples
+    # Load the test dataset
+    batch_size = 4
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    
+    testset = torchvision.datasets.CIFAR10(
+        root='./cifar10', train=False, download=True, transform=transform
+    )
+    testloader = torch.utils.data.DataLoader(
+        testset, batch_size=batch_size, shuffle=False, num_workers=2
+    )
 
-# def get_first_layer_weights():
-#     net = Net()
-#     # TODO: load the trained weights
-#     first_weight = None  # TODO: get conv1 weights (exclude bias)
-#     return first_weight
+    # Compute accuracy
+    correct = 0
+    total = 0
+    
+    with torch.no_grad():  # No need to compute gradients during evaluation
+        for data in testloader:
+            images, labels = data
+            images, labels = images.to(device), labels.to(device)  # Move to GPU if available
+            outputs = net(images)
+            # Get predicted results
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    
+    accuracy = 100 * correct / total
+    print(f'Accuracy on 10000 test images: {accuracy:.2f}%')
+    return accuracy
 
-# def get_second_layer_weights():
-#     net = Net()
-#     # TODO: load the trained weights
-#     second_weight = None  # TODO: get conv2 weights (exclude bias)
-#     return second_weight
+def convert_cuda_weights_to_CPU(gpu_weights_path):
+    model = Net()
+    cpu_device = torch.device('cpu')
+    state_dict = torch.load(gpu_weights_path, map_location=cpu_device)
+
+    # load the weights into the model
+    model.load_state_dict(state_dict)
+    model.to(cpu_device)
+    print("Model weights loaded to CPU.")
+
+    cpu_weights_path = './cifar_net_2epoch.pth'
+    torch.save(model.state_dict(), cpu_weights_path)
+    print(f"CPU-version model weights saved to: {cpu_weights_path}")
+
+def get_first_layer_weights():
+    net = Net()
+    PATH = './cifar_net_2epoch.pth'
+    net.load_state_dict(torch.load(PATH)) # Load the trained weights
+    first_weight = net.conv1.weight.data.clone()  # Get conv1 weights (exclude bias)
+
+    return first_weight
+
+def get_second_layer_weights():
+    net = Net()
+    PATH = './cifar_net_2epoch.pth'
+    net.load_state_dict(torch.load(PATH)) # Load the trained weights
+    second_weight = net.conv2.weight.data.clone()  # Get conv2 weights (exclude bias)
+    return second_weight
 
 # def hyperparameter_sweep():
 #     '''
@@ -180,4 +219,8 @@ def train_classifier():
 
 if __name__ == "__main__":
     # images, labels = CIFAR10_dataset_a()
-    train_classifier()
+    # train_classifier()
+    # evalNetwork()
+    # convert_cuda_weights_to_CPU('./cifar_net_2epoch_gpu.pth')
+    weight1 = get_first_layer_weights()
+    weight2 = get_second_layer_weights()
