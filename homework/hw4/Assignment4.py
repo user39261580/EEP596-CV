@@ -22,6 +22,62 @@ def CIFAR10_dataset_a():
     2. Labels of the images in a torch array
 
     """
+
+    def unpickle(file):
+        import pickle
+        import sys
+        with open(file, 'rb') as fo:
+            dict = pickle.load(fo, encoding='bytes')
+        
+        # Get the binary size of the dictionary
+        dict_size = sys.getsizeof(dict)
+        print(f"\nDictionary object size for {file}: {dict_size} bytes ({dict_size / 1024 / 1024:.2f} MB)")
+        
+        # Calculate total size including all data
+        total_size = dict_size
+        print(f"\nDetailed size breakdown:")
+        
+        for key in dict.keys():
+            obj = dict[key]
+            obj_size = sys.getsizeof(obj)
+            
+            # For numpy arrays, get actual data size
+            if hasattr(obj, 'nbytes'):
+                actual_size = obj.nbytes
+                total_size += actual_size
+                print(f"  - {key}: {obj_size} bytes (object overhead)")
+                print(f"    → Actual data size: {actual_size} bytes ({actual_size / 1024 :.2f} KB)")
+                if hasattr(obj, 'shape') and hasattr(obj, 'dtype'):
+                    print(f"    → Shape: {obj.shape}, dtype: {obj.dtype}")
+            # For lists, calculate total size of all elements
+            elif isinstance(obj, list):
+                list_total = obj_size + sum(sys.getsizeof(item) for item in obj)
+                total_size += list_total
+                print(f"  - {key}: {obj_size} bytes (list overhead)")
+                print(f"    → Total with elements: {list_total} bytes ({list_total / 1024 :.2f} KB)")
+                print(f"    → Number of items: {len(obj)}")
+            else:
+                total_size += obj_size
+                print(f"  - {key}: {obj_size} bytes ({obj_size / 1024 :.2f} KB)")
+
+        print(f"\nTotal estimated size: {total_size} bytes ({total_size / 1024 :.2f} KB)")
+        print("-" * 80)
+        
+        return dict
+
+    # Use unpickle to load training data batches
+    batch_files = [
+        './cifar10/cifar-10-batches-py/data_batch_1',
+        './cifar10/cifar-10-batches-py/data_batch_2',
+        './cifar10/cifar-10-batches-py/data_batch_3',
+        './cifar10/cifar-10-batches-py/data_batch_4',
+        './cifar10/cifar-10-batches-py/data_batch_5'
+    ]
+    
+    # Unpickle the first batch as an example
+    print("\nUnpickling CIFAR-10 training batch:")
+    train_batch = unpickle(batch_files[0])
+    
     # Convert dataset to tensor and normalize to [-1, 1]
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -370,10 +426,10 @@ def plot_results(results):
 
 
 if __name__ == "__main__":
-    # images, labels = CIFAR10_dataset_a()
+    images, labels = CIFAR10_dataset_a()
     # train_classifier()
     # evalNetwork()
     # convert_cuda_weights_to_CPU('./cifar_net_2epoch_gpu.pth')
     # weight1 = get_first_layer_weights()
     # weight2 = get_second_layer_weights()
-    hyperparameter_sweep()
+    # hyperparameter_sweep()

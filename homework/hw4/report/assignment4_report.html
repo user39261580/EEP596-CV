@@ -105,19 +105,47 @@
                     <td class="value">10000</td>
                 </tr>
                 <tr>
-                    <td>size_batch_bytes (KB)</td>
-                    <td class="value">30000 KB (~29.3 MB)</td>
+                    <td>size_batch_bytes (Binary file, KB)</td>
+                    <td class="value">30009.77</td>
+                </tr>
+                <tr>
+                    <td>size_batch_bytes (Python unpickled dict, KB)</td>
+                    <td class="value">30992.83</td>
                 </tr>
                 <tr>
                     <td>size_image_bytes (KB)</td>
-                    <td class="value">3.072 KB (3072 bytes for 32x32x3)</td>
+                    <td class="value">3</td>
                 </tr>
                 <tr>
                     <td>size_batchimage_bytes (10k images, KB)</td>
-                    <td class="value">30720 KB (~30 MB)</td>
+                    <td class="value">30000</td>
                 </tr>
             </table>
         </div>
+        
+        <h3>Binary Size Analysis</h3>
+        <div class="info-box">
+            <p><strong>Binary file size:</strong> 30009.77 KB (30000 KB data + 9.77 KB labels)</p>
+            <p><strong>Python unpickled dict size:</strong> 30992.83 KB</p>
+            <p><strong>Size difference explanation:</strong> The Python unpickled dictionary is larger due to Python's data structure overhead. When the binary file is loaded into Python, list objects add additional memory overhead for storing elements, making the in-memory representation larger than the original binary file.</p>
+        </div>
+
+        <h3>Detailed Unpickled Dictionary Size Breakdown</h3>
+        <pre>
+Detailed size breakdown:
+  - b'batch_label': 54 bytes (0.05 KB)
+  - b'labels': 90104 bytes (list overhead)
+    → Total with elements: 370104 bytes (361.43 KB)
+    → Number of items: 10000
+  - b'data': 128 bytes (object overhead)
+    → Actual data size: 30720000 bytes (30000.00 KB)
+    → Shape: (10000, 3072), dtype: uint8
+  - b'filenames': 90104 bytes (list overhead)
+    → Total with elements: 646276 bytes (631.13 KB)
+    → Number of items: 10000
+
+Total estimated size: 31736658 bytes (30992.83 KB)
+        </pre>
         
         <h3>1a. Sample Mini-batch (4 random images)</h3>
 
