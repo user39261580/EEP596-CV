@@ -212,41 +212,107 @@ def backprop_c():
     return w0_new, w1_new, w2_new
 
 
-# def constructParaboloid(w=256, h=256):
-#     img = np.zeros((w, h), np.float32)
-#     for x in range(w):
-#         for y in range(h):
-#             # let's center the paraboloid in the img
-#             img[y, x] = (x - w / 2) ** 2 + (y - h / 2) ** 2
-#     return img
+def constructParaboloid(w=256, h=256):
+    img = np.zeros((w, h), np.float32)
+    for x in range(w):
+        for y in range(h):
+            # let's center the paraboloid in the img
+            img[y, x] = (x - w / 2) ** 2 + (y - h / 2) ** 2
+    return img
 
 
-# def newtonMethod(x0, y0):
-#     paraboloid = torch.tensor([constructParaboloid()]).squeeze()
-#     paraboloid = torch.unsqueeze(paraboloid, 0) 
-#     paraboloid = torch.unsqueeze(paraboloid, 0)    # -> (1,1,H,W) for conv2d
+def newtonMethod(x0, y0):
+    # paraboloid = torch.tensor([constructParaboloid()]).squeeze()
+    paraboloid = torch.from_numpy(constructParaboloid())
+    paraboloid = torch.unsqueeze(paraboloid, 0) 
+    paraboloid = torch.unsqueeze(paraboloid, 0)    # -> (1,1,H,W) for conv2d
+    
+    x, y = float(x0), float(y0)
 
-#     """
-#     Insert your code here
-#     """
+    tolerance = 1e-4
+    iterations = 50
+    
+    for _ in range(iterations):  
+        # Current position
+        xi, yi = int(round(x)), int(round(y))
 
-#     return final_x, final_y
+        # Boundary check
+        if xi < 1 or xi >= paraboloid.shape[3]-1 or yi < 1 or yi >= paraboloid.shape[2]-1:
+            break
+        
+        # Calculate gradient
+        fx = (paraboloid[0, 0, yi, xi+1] - paraboloid[0, 0, yi, xi-1]) / 2.0
+        fy = (paraboloid[0, 0, yi+1, xi] - paraboloid[0, 0, yi-1, xi]) / 2.0
+        
+        # Calculate Hessian
+        fxx = paraboloid[0, 0, yi, xi+1] - 2*paraboloid[0, 0, yi, xi] + paraboloid[0, 0, yi, xi-1]
+        fyy = paraboloid[0, 0, yi+1, xi] - 2*paraboloid[0, 0, yi, xi] + paraboloid[0, 0, yi-1, xi]
+        fxy = (paraboloid[0, 0, yi+1, xi+1] - paraboloid[0, 0, yi+1, xi-1] - 
+               paraboloid[0, 0, yi-1, xi+1] + paraboloid[0, 0, yi-1, xi-1]) / 4.0
+        
+        # Newton method: [x, y] = [x, y] - H^{-1} * grad
+        H = torch.tensor([[fxx, fxy], [fxy, fyy]], dtype=torch.float32)
+        grad = torch.tensor([fx, fy], dtype=torch.float32)
+        
+        try:
+            H_inv = torch.inverse(H)
+            delta = torch.matmul(H_inv, grad)
+            x -= delta[0].item()
+            y -= delta[1].item()
+        except:
+            break
+        
+        # Convergence check
+        if torch.norm(delta) < tolerance:
+            break
+
+    print(f"Converged to ({x}, {y})")
+    
+    return int(round(x)), int(round(y))
 
 
-# def sgd(x0, y0, lr=0.001):
-#     paraboloid = torch.tensor([constructParaboloid()]).squeeze()
-#     paraboloid = torch.unsqueeze(paraboloid, 0)
-#     paraboloid = torch.unsqueeze(paraboloid, 0)
+def sgd(x0, y0, lr=0.001):
+    # paraboloid = torch.tensor([constructParaboloid()]).squeeze()
+    paraboloid = torch.from_numpy(constructParaboloid())
+    paraboloid = torch.unsqueeze(paraboloid, 0)
+    paraboloid = torch.unsqueeze(paraboloid, 0)
 
-#     """
-#     Insert your code here
-#     """
+    x, y = float(x0), float(y0)
 
-#     return final_x, final_y
+    tolerance = 1e-4
+    iterations = 5000
+    
+    for epoch in range(iterations):
+        xi, yi = int(round(x)), int(round(y))
+        
+        # Boundary check
+        if xi < 1 or xi >= paraboloid.shape[3]-1 or yi < 1 or yi >= paraboloid.shape[2]-1:
+            break
+        
+        # Calculate gradients
+        fx = (paraboloid[0, 0, yi, xi+1] - paraboloid[0, 0, yi, xi-1]) / 2.0
+        fy = (paraboloid[0, 0, yi+1, xi] - paraboloid[0, 0, yi-1, xi]) / 2.0
+        
+        # SGD update
+        x -= lr * fx.item()
+        y -= lr * fy.item()
+        
+        # Convergence check
+        if abs(fx.item()) < tolerance and abs(fy.item()) < tolerance:
+            break
+    
+    print(f"Converged to ({x}, {y})")
+    
+    return int(round(x)), int(round(y))
 
 
 if __name__ == "__main__":
     # chain_rule()
     # ReLU()
     # chain_rule_a()
-    chain_rule_b()
+    # chain_rule_b()
+    # backprop_a()
+    # backprop_b()
+    # backprop_c()
+    # newtonMethod(200, 50)
+    sgd(200, 50, lr=0.001)
