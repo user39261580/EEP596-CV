@@ -232,7 +232,7 @@ def newtonMethod(x0, y0):
     tolerance = 1e-4
     iterations = 50
     
-    for _ in range(iterations):  
+    for iter_count in range(iterations):  
         # Current position
         xi, yi = int(round(x)), int(round(y))
 
@@ -264,11 +264,12 @@ def newtonMethod(x0, y0):
         
         # Convergence check
         if torch.norm(delta) < tolerance:
+            iter_count += 1
             break
 
-    print(f"Converged to ({x}, {y})")
+    print(f"Converged to ({x}, {y}) in {iter_count} iterations")
     
-    return int(round(x)), int(round(y))
+    return int(round(x)), int(round(y)), iter_count
 
 
 def sgd(x0, y0, lr=0.001):
@@ -301,9 +302,9 @@ def sgd(x0, y0, lr=0.001):
         if abs(fx.item()) < tolerance and abs(fy.item()) < tolerance:
             break
     
-    print(f"Converged to ({x}, {y})")
+    print(f"Converged to ({x}, {y}) in {epoch + 1} iterations")
     
-    return int(round(x)), int(round(y))
+    return int(round(x)), int(round(y)), epoch + 1
 
 
 if __name__ == "__main__":
