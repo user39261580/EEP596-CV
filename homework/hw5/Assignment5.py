@@ -129,32 +129,87 @@ def chain_rule_b():
     return torch.tensor([gw0, gx0, gw1, gx1, gw2])
 
 
-# def backprop_a():
-#     """
-#     Let f(w,x) = torch.tanh(w0x0+w1x1+w2).  
-#     Assume the weight vector is w = [w0=5, w1=2], 
-#     the input vector is  x = [x0=-1,x1= 4],, and the bias is  w2  =-2.
-#     Use PyTorch to calculate the forward pass of the network, return y_hat = f(w,x).
-#     """
-#     return y_hat
+def backprop_a():
+    """
+    Let f(w,x) = torch.tanh(w0x0+w1x1+w2).  
+    Assume the weight vector is w = [w0=5, w1=2], 
+    the input vector is  x = [x0=-1,x1= 4],, and the bias is  w2  =-2.
+    Use PyTorch to calculate the forward pass of the network, return y_hat = f(w,x).
+    """
 
-# def backprop_b():
-#     """
-#     Use PyTorch Autograd to calculate the gradients 
-#     for each of the weights, and return the gradient of them 
-#     in order of w0, w1, and w2.
-#     """
+    w0 = torch.tensor(5.0, requires_grad=True)
+    w1 = torch.tensor(2.0, requires_grad=True)
+    w2 = torch.tensor(-2.0, requires_grad=True)
+    x0 = torch.tensor(-1.0)
+    x1 = torch.tensor(4.0)
 
-#     return gw0, gw1, gw2
+    # Forward pass
+    z = w0 * x0 + w1 * x1 + w2
+    y_hat = torch.tanh(z)
+    
+    return y_hat
 
-# def backprop_c():
-#     """
-#     Assuming a learning rate of 0.1, 
-#     update each of the weights accordingly. 
-#     For simplicity, just do one iteration. 
-#     And return the updated weights in the order of w0, w1, and w2 
-#     """
-#     return  w0, w1, w2 
+def backprop_b():
+    """
+    Use PyTorch Autograd to calculate the gradients 
+    for each of the weights, and return the gradient of them 
+    in order of w0, w1, and w2.
+    """
+
+    w0 = torch.tensor(5.0, requires_grad=True)
+    w1 = torch.tensor(2.0, requires_grad=True)
+    w2 = torch.tensor(-2.0, requires_grad=True)
+    x0 = torch.tensor(-1.0)
+    x1 = torch.tensor(4.0)
+
+    # Forward pass
+    z = w0 * x0 + w1 * x1 + w2
+    y_hat = torch.tanh(z)
+
+    # MSE Loss
+    y_true = torch.tensor(1.0)
+    loss = (y_hat - y_true) ** 2
+
+    # Backward pass
+    loss.backward()
+    
+    return w0.grad, w1.grad, w2.grad
+
+def backprop_c():
+    """
+    Assuming a learning rate of 0.1, 
+    update each of the weights accordingly. 
+    For simplicity, just do one iteration. 
+    And return the updated weights in the order of w0, w1, and w2 
+    """
+    
+    w0 = torch.tensor(5.0, requires_grad=True)
+    w1 = torch.tensor(2.0, requires_grad=True)
+    w2 = torch.tensor(-2.0, requires_grad=True)
+    x0 = torch.tensor(-1.0)
+    x1 = torch.tensor(4.0)
+
+    # Forward pass
+    z = w0 * x0 + w1 * x1 + w2
+    y_hat = torch.tanh(z)
+
+    # MSE Loss
+    y_true = torch.tensor(1.0)
+    loss = (y_hat - y_true) ** 2
+
+    # Backward pass
+    loss.backward()
+
+    # Learning rate
+    lr = 0.1
+
+    # Weight update
+    with torch.no_grad():
+        w0_new = w0 - lr * w0.grad
+        w1_new = w1 - lr * w1.grad
+        w2_new = w2 - lr * w2.grad
+
+    return w0_new, w1_new, w2_new
 
 
 # def constructParaboloid(w=256, h=256):
