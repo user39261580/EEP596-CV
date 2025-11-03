@@ -1,3 +1,4 @@
+import math
 import torch
 import torchvision
 import cv2
@@ -58,22 +59,75 @@ def ReLU():
     
     return dx, dw
 
-# def chain_rule_a():
-#     """
-#     In the lecture notes, the last three forward pass values are 
-#     a=0.37, b=1.37, and c=0.73.  
-#     Calculate these numbers to 4 decimal digits and return in order of a, b, c
-#     """
-#     return a, b, c
+import torch
 
-# def chain_rule_b():
-#     """
-#     In the lecture notes, the backward pass values are
-#     ±0.20, ±0.39, -0.59, and -0.53.  
-#     Calculate these numbers to 4 decimal digits 
-#     and return in order of gradients for w0, x0, w1, x1, w2.
-#     """
-#     return gw0, gx0, gw1, gx1, gw2
+def chain_rule_a():
+    """
+    In the lecture notes, the last three forward pass values are
+    a=0.37, b=1.37, and c=0.73.
+    Calculate these numbers to 4 decimal digits and return in order of a, b, c
+    """
+    # From lec05b
+    w0 = 2.00
+    x0 = -1.00
+    w1 = -3.00
+    x1 = -2.00
+    w2 = -3.00
+
+    # Forward
+    s3 = w0 * x0 + w1 * x1 + w2 
+    s4 = -s3
+
+    a = math.exp(s4)
+    b = a + 1
+    c = 1 / b
+
+    # Round to 4 decimal digits
+    a_val = round(a, 4)
+    b_val = round(b, 4)
+    c_val = round(c, 4)
+
+    # print(f"a: {a_val}, b: {b_val}, c: {c_val}")
+
+    return a_val, b_val, c_val
+
+
+import torch
+
+def chain_rule_b():
+    """
+    In the lecture notes, the backward pass values are 0.20, 0.39, -0.59, and -0.53.
+    Calculate these numbers to 4 decimal digits and return gradients in order of
+    w0, x0 , w1, x1, w2.
+    """
+    # Initialize variables as tensors with requires_grad=True
+    w0 = torch.tensor(2.00, requires_grad=True)
+    x0 = torch.tensor(-1.00, requires_grad=True)
+    w1 = torch.tensor(-3.00, requires_grad=True)
+    x1 = torch.tensor(-2.00, requires_grad=True)
+    w2 = torch.tensor(-3.00, requires_grad=True)
+
+    # Forward pass
+    s3 = w0 * x0 + w1 * x1 + w2
+    s4 = -s3
+    a = torch.exp(s4)
+    b = a + 1
+    c = 1 / b
+
+    # Backward pass
+    c.backward()
+
+    # Get gradients from .grad attribute and round to 4 decimal digits
+    gw0 = round(w0.grad.item(), 4)
+    gx0 = round(x0.grad.item(), 4)
+    gw1 = round(w1.grad.item(), 4)
+    gx1 = round(x1.grad.item(), 4)
+    gw2 = round(w2.grad.item(), 4)
+
+    print(f"gw0: {gw0}, gx0: {gx0}, gw1: {gw1}, gx1: {gx1}, gw2: {gw2}")
+
+    return torch.tensor([gw0, gx0, gw1, gx1, gw2])
+
 
 # def backprop_a():
 #     """
@@ -137,5 +191,7 @@ def ReLU():
 
 
 if __name__ == "__main__":
-    chain_rule()
-    ReLU()
+    # chain_rule()
+    # ReLU()
+    # chain_rule_a()
+    chain_rule_b()
