@@ -376,8 +376,8 @@ if __name__ == '__main__':
     # backbone()
 
     # Train the model with ResNet18 transfer learning
-    # transfer_learning()
-    # convert_cuda_weights_to_CPU('./Res_net_10epoch_gpu.pth', './Res_net_10epoch.pth')
+    transfer_learning()
+    convert_cuda_weights_to_CPU('./Res_net_10epoch_gpu.pth', './Res_net_10epoch.pth')
 
     # Q5
     # ch_in=3
