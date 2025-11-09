@@ -200,7 +200,7 @@ def convert_cuda_weights_to_CPU(gpu_weights_path):
     model.to(cpu_device)
     print("Model weights loaded to CPU.")
 
-    cpu_weights_path = './cifar_net_10epoch.pth'
+    cpu_weights_path = './Gap_net_10epoch.pth'
     torch.save(model.state_dict(), cpu_weights_path)
     print(f"CPU-version model weights saved to: {cpu_weights_path}")
 
