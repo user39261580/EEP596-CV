@@ -200,31 +200,24 @@ def backbone():
 
 class TransferFromResNet18Model(nn.Module):
     def __init__(self, num_classes=10):
-        resnet = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-        backbone = nn.Sequential(*list(resnet.children())[:-1])  # Remove the final fully connected layer
-
         super(TransferFromResNet18Model, self).__init__()
-        self.backbone = backbone
         
-        # Freeze backbone parameters
-        for param in self.backbone.parameters():
+        # Load pretrained ResNet18
+        resnet = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+        
+        # Freeze all layers
+        for param in resnet.parameters():
             param.requires_grad = False
-
-        # ResNet18 backbone output is [batch_size, 512, 1, 1]
-        self.feature_dim = 512
-
-        # Define classifier head
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(self.feature_dim, num_classes)
-        )
+        
+        # Replace the final fully connected layer for CIFAR-10 (10 classes)
+        # ResNet18's fc layer input features: 512
+        resnet.fc = nn.Linear(512, num_classes)
+        
+        # Store the modified resnet as the model
+        self.model = resnet
     
     def forward(self, x):
-        # Extract features using backbone
-        features = self.backbone(x)
-        # Categorize through classifier head
-        output = self.classifier(features)
-        return output
+        return self.model(x)
 
 
 def transfer_learning():
@@ -248,9 +241,9 @@ def transfer_learning():
         trainset, batch_size=batch_size, shuffle=True, num_workers=2
     )
     
-    # Set up loss function and optimizer (only optimize classifier head)
+    # Set up loss function and optimizer (only optimize the final fc layer)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.classifier.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(model.model.fc.parameters(), lr=0.001, momentum=0.9)
     
     # Training loop
     num_epochs = 10
@@ -278,8 +271,8 @@ def transfer_learning():
     
     print('Finished Training')
 
-    # Save model
-    torch.save(model.state_dict(), 'Res_net_10epoch_gpu.pth')
+    # Save the ResNet18 model (not the wrapper)
+    torch.save(model.model.state_dict(), 'Res_net_10epoch_gpu.pth')
     print('Model saved as Res_net_10epoch_gpu.pth')
 
     # Evaluation
@@ -312,16 +305,17 @@ def transfer_learning():
 
 #     def forward(self, x):
 
-def convert_cuda_weights_to_CPU(model, gpu_weights_path, cpu_weights_path):
+def convert_cuda_weights_to_CPU(gpu_weights_path, cpu_weights_path):
+    """Convert GPU model weights to CPU-compatible weights."""
     cpu_device = torch.device('cpu')
+    
+    # Load the state dict from GPU weights
     state_dict = torch.load(gpu_weights_path, map_location=cpu_device)
-
-    # load the weights into the model
-    model.load_state_dict(state_dict)
-    model.to(cpu_device)
+    
     print("Model weights loaded to CPU.")
 
-    torch.save(model.state_dict(), cpu_weights_path)
+    # Save the state dict for CPU
+    torch.save(state_dict, cpu_weights_path)
     print(f"CPU-version model weights saved to: {cpu_weights_path}")
 
     
@@ -333,11 +327,12 @@ if __name__ == '__main__':
     
     # train_GAPNet()
     # eval_GAPNet()
-    # convert_cuda_weights_to_CPU('./Gap_net_10epoch_gpu.pth')
+    # convert_cuda_weights_to_CPU('./Gap_net_10epoch_gpu.pth', './Gap_net_10epoch.pth')
     # backbone()
 
-    # transfer_learning()
-    convert_cuda_weights_to_CPU(TransferFromResNet18Model(), './Res_net_10epoch_gpu.pth', './Res_net_10epoch.pth')
+    # Re-train and save the model with correct structure
+    transfer_learning()
+    convert_cuda_weights_to_CPU('./Res_net_10epoch_gpu.pth', './Res_net_10epoch.pth')
 
     # Q5
     # ch_in=3
