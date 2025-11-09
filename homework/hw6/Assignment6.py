@@ -182,12 +182,9 @@ def backbone():
     model.eval() # Set to evaluation mode
 
     # Define transform for ResNet
-    transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+    transform = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    )
     
     image = Image.open('cat_eye.jpg').convert('RGB')
     image_tensor = transform(image).unsqueeze(0) # Add batch dimension
@@ -225,13 +222,9 @@ def transfer_learning():
     model = model.to(device)
 
     # Prepare dataset
-    transform = transforms.Compose([
-        transforms.Resize(224),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                           std=[0.229, 0.224, 0.225])
-    ])
+    transform = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    )
     
     batch_size = 32
     trainset = torchvision.datasets.CIFAR10(
@@ -271,7 +264,7 @@ def transfer_learning():
     
     print('Finished Training')
 
-    # Save the ResNet18 model (not the wrapper)
+    # Save the ResNet18 model
     torch.save(model.model.state_dict(), 'Res_net_10epoch_gpu.pth')
     print('Model saved as Res_net_10epoch_gpu.pth')
 
@@ -298,12 +291,64 @@ def transfer_learning():
     print(f'Accuracy on 10000 test images: {accuracy:.2f}%')
 
 
-# class MobileNetV1(nn.Module):
-#     """Define MobileNetV1 please keep the strucutre of the class Q5"""
-#     def __init__(self, ch_in, n_classes):
-
-
-#     def forward(self, x):
+class MobileNetV1(nn.Module):
+    def __init__(self, ch_in, n_classes):
+        super(MobileNetV1, self).__init__()
+        
+        # Helper function to create a standard conv layer followed by batch normalization and ReLU
+        def conv_bn(in_channels, out_channels, stride):
+            return nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(inplace=True)
+            )
+        
+        # Helper function to create a depthwise separable convolution layer = depthwise + pointwise
+        def conv_dw(in_channels, out_channels, stride):
+            return nn.Sequential(
+                # Depthwise Convolution: 3x3 conv for each input channel
+                nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=stride, padding=1, 
+                         groups=in_channels, bias=False),
+                nn.BatchNorm2d(in_channels),
+                nn.ReLU(inplace=True),
+                
+                # Pointwise Convolution: 1x1 conv to merge channels
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(inplace=True)
+            )
+        
+        self.features = nn.Sequential(
+            conv_bn(ch_in, 32, 2), # Initial conv layer: 3 channel to 32 channels with stride 2
+            conv_dw(32, 64, 1),
+            conv_dw(64, 128, 2), # stride=2
+            conv_dw(128, 128, 1),
+            conv_dw(128, 256, 2),
+            conv_dw(256, 256, 1),
+            conv_dw(256, 512, 2),
+            
+            # 5 times depthwise separable conv with stride 1
+            conv_dw(512, 512, 1),
+            conv_dw(512, 512, 1),
+            conv_dw(512, 512, 1),
+            conv_dw(512, 512, 1),
+            conv_dw(512, 512, 1),
+            
+            conv_dw(512, 1024, 2),
+            conv_dw(1024, 1024, 1),
+            
+            # Global average pooling
+            nn.AdaptiveAvgPool2d(1)
+        )
+        
+        # Fully connected layer
+        self.classifier = nn.Linear(1024, n_classes)
+    
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)  # Flatten for the fully connected layer
+        x = self.classifier(x)
+        return x
 
 def convert_cuda_weights_to_CPU(gpu_weights_path, cpu_weights_path):
     """Convert GPU model weights to CPU-compatible weights."""
@@ -330,11 +375,23 @@ if __name__ == '__main__':
     # convert_cuda_weights_to_CPU('./Gap_net_10epoch_gpu.pth', './Gap_net_10epoch.pth')
     # backbone()
 
-    # Re-train and save the model with correct structure
-    transfer_learning()
-    convert_cuda_weights_to_CPU('./Res_net_10epoch_gpu.pth', './Res_net_10epoch.pth')
+    # Train the model with ResNet18 transfer learning
+    # transfer_learning()
+    # convert_cuda_weights_to_CPU('./Res_net_10epoch_gpu.pth', './Res_net_10epoch.pth')
 
     # Q5
     # ch_in=3
     # n_classes=1000
     # model = MobileNetV1(ch_in=ch_in, n_classes=n_classes)
+
+    # # Create a random input tensor (batch_size=1, channels=3, height=224, width=224)
+    # x = torch.randn(1, 3, 224, 224)
+    
+    # # Forward pass
+    # output = model(x)
+    
+    # # Output should be (1, 1000)
+    # print(f"Input shape: {x.shape}")
+    # print(f"Output shape: {output.shape}")
+    # assert output.shape == (1, n_classes), f"Expected {(1, n_classes)}, got {output.shape}"
+    # print("Dimension check passed!")
