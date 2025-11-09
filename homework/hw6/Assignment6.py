@@ -8,6 +8,9 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
 
+from torchvision import models
+from PIL import Image
+
 # Check if GPU is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Runs on {device} device.")
@@ -172,11 +175,28 @@ def eval_GAPNet():
     print(f'Accuracy on 10000 test images: {accuracy:.2f}%')
     return accuracy
 
-# def backbone():
-#     """
-#     Insert your code here, Q3
-#     """
-#     return features
+def backbone():
+    resnet18 = models.resnet18(pretrained=True)
+    
+    resnet18 = nn.Sequential(*list(resnet18.children())[:-1]) # Remove the final fully connected layer
+    resnet18.eval() # Set to evaluation mode
+
+    # Define transform for ResNet
+    transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    
+    image = Image.open('cat_eye.jpg').convert('RGB')
+    image_tensor = transform(image).unsqueeze(0) # Add batch dimension
+    with torch.no_grad():
+        features = resnet18(image_tensor)
+        # print(f'Extracted features shape: {features.shape}')
+
+    return features
+
 
 # def transfer_learning():
 #     """
@@ -213,7 +233,8 @@ if __name__ == '__main__':
     
     # train_GAPNet()
     # eval_GAPNet()
-    convert_cuda_weights_to_CPU('./Gap_net_10epoch_gpu.pth')
+    # convert_cuda_weights_to_CPU('./Gap_net_10epoch_gpu.pth')
+    backbone()
 
     # Q5
     # ch_in=3
