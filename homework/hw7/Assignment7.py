@@ -162,16 +162,83 @@ def cross_correlation(tb_left, tb_right):
         plot_1d_array(cross_correlation_values_at_152, "Cross-correlation at (152, 152)", save_image=False)
         plot_2d_array_as_image(smoothed_diff, "Smoothed Cross-correlation Image", save_image=False)
         
-    return smoothed_cross_correlation_tensor
+    return cross_correlation_values_at_152
 
-# def disparity_map(
+def disparity_map(tb_left, tb_right, plot_result=False):
+    max_d = 30
+    kernel_size = 5
+    height, width = tb_left.shape
+    
+    # Create a 3D array to store all smoothed cross-correlation images
+    smoothed_cross_correlation_tensor = np.zeros((height, width, max_d + 1))
+
+    for d in range(max_d + 1):
+        # Create shifted right image
+        shifted_right = shift_array(tb_right, d)
+        
+        # Calculate the absolute difference between the original left image and the shifted right image
+        abs_diff_image = np.abs(tb_left - shifted_right)
+        
+        # Use 5x5 box filter for smoothing
+        smoothed_diff = convolve2d_torch(abs_diff_image, kernel_size)
+        
+        # Store the smoothed result in the 3D array
+        smoothed_cross_correlation_tensor[:, :, d] = smoothed_diff
+    
+    # For each pixel, find the disparity d that minimizes the smoothed cross-correlation value
+    # np.argmin returns the index of the minimum value, which corresponds to the disparity d
+    left_right_disparity = np.argmin(smoothed_cross_correlation_tensor, axis=2)
+    
+    if plot_result:
+        plot_2d_array_as_image(left_right_disparity, "Left-Right Disparity Map", save_image=False)
+        
+    return left_right_disparity.astype(np.uint8)
 
 
-# def right_left_disparity(tb_left, tb_right, plot_result=False):
+def right_left_disparity(tb_left, tb_right, plot_result=False):
+    max_d = 30
+    height, width = tb_left.shape
+    
+    cost_tensor = np.zeros((max_d + 1, height, width), dtype=np.float32)
+
+    for d in range(max_d + 1):
+        # Shift the left image
+        shifted_left = shift_array(tb_left, d)
+        
+        # Calculate the absolute difference between the original right image and the shifted left image
+        abs_diff_image = np.abs(tb_right - shifted_left)
+        cost_tensor[d] = abs_diff_image
+
+    right_left_disparity_map = np.argmin(cost_tensor, axis=0)
+    
+    if plot_result:
+        plot_2d_array_as_image(right_left_disparity_map, "Right-Left Disparity Map", save_image=False)
+        
+    return right_left_disparity_map.astype(np.uint8)
 
 
 
-# def disparity_check(tb_left, tb_right):
+def disparity_check(tb_left, tb_right, plot_result=False):
+    disp_L = disparity_map(tb_left, tb_right, plot_result=False)
+    disp_R = right_left_disparity(tb_left, tb_right, plot_result=False)
+
+    H, W = disp_L.shape
+    
+    cleaned = np.zeros_like(disp_L, dtype=np.float32)
+    for y in range(H):
+        for x in range(W):
+            d = int(disp_L[y, x])
+            xr = x - d
+            if d >= 0 and xr >= 0 and xr < W:
+                # Check if the disparity matches
+                if int(disp_R[y, xr]) == d:
+                    cleaned[y, x] = d
+            # else leave as 0 (invalid disparity)
+                    
+    if plot_result:
+        show = (cleaned * (255.0 / 30)).astype(np.uint8)
+        plot_2d_array_as_image(show, "disparity_cleaned_visual", save_image=False)
+    return cleaned
 
 
 
@@ -186,8 +253,8 @@ if __name__ == "__main__":
     tb_right = load_image_in_grayscale("tsukuba_right.png")
     # scanlines(tb_left, tb_right)
     # auto_correlation(tb_right)
-    smoothing(tb_right)
-    cross_correlation(tb_left, tb_right)
+    # smoothing(tb_right)
+    # cross_correlation(tb_left, tb_right)
     # disparity_map(tb_left, tb_right, plot_result=True)
     # right_left_disparity(tb_left, tb_right, plot_result=True)
-    # disparity_check(tb_left, tb_right)
+    disparity_check(tb_left, tb_right, plot_result=True)
