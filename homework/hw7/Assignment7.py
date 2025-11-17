@@ -242,9 +242,53 @@ def disparity_check(tb_left, tb_right, plot_result=False):
 
 
 
-def reconstruction(tb_left, tb_right):
-    # Fill your code hear
-    pass
+def reconstruction(tb_left_gray, tb_right_gray,
+                   left_color_path="tsukuba_left.png",
+                   right_color_path="tsukuba_right.png",
+                   max_d=30, kernel_size=5,
+                   f=700.0, B=0.1, ply_path="kermit.ply"):
+    # Get disparity map
+    disp = disparity_check(tb_left_gray, tb_right_gray, plot_result=False)
+
+    # Load color image
+    left_color = cv.imread(left_color_path, cv.IMREAD_COLOR)
+    if left_color is None:
+        raise FileNotFoundError(f"Cannot read color image: {left_color_path}")
+    H, W = disp.shape
+
+    # 3) Build 3D point cloud (orthographic projection x,y, depth z=fB/d)
+    points = []
+    for y in range(H):
+        for x in range(W):
+            d = disp[y, x]
+            if d <= 0:
+                continue
+            z = f * B / float(d)
+            # Orthographic projection: center the pixel coordinates and scale
+            x_o = (x - W/2.0) * (B / 10.0)
+            y_o = (y - H/2.0) * (B / 10.0)
+            b, g, r = left_color[y, x].tolist()  # OpenCV uses BGR
+            points.append((x_o, y_o, z, r, g, b))
+
+    # 4) Export ASCII PLY
+    with open(ply_path, "w") as fply:
+        fply.write("ply\n")
+        fply.write("format ascii 1.0\n")
+        fply.write(f"element vertex {len(points)}\n")
+        fply.write("property float x\n")
+        fply.write("property float y\n")
+        fply.write("property float z\n")
+        fply.write("property uchar red\n")
+        fply.write("property uchar green\n")
+        fply.write("property uchar blue\n")
+        fply.write("end_header\n")
+
+        for x_o, y_o, z, r, g, b in points:
+            fply.write(f"{x_o:.6f} {y_o:.6f} {z:.6f} {int(r)} {int(g)} {int(b)}\n")
+
+    print(f"PLY saved to {ply_path} with {len(points)} points.")
+    return ply_path
+
 
 
 if __name__ == "__main__":
@@ -257,4 +301,5 @@ if __name__ == "__main__":
     # cross_correlation(tb_left, tb_right)
     # disparity_map(tb_left, tb_right, plot_result=True)
     # right_left_disparity(tb_left, tb_right, plot_result=True)
-    disparity_check(tb_left, tb_right, plot_result=True)
+    # disparity_check(tb_left, tb_right, plot_result=True)
+    reconstruction(tb_left, tb_right)
