@@ -101,7 +101,7 @@ def auto_correlation(tb_right):
 # TODO
 def convolve2d_torch(array: np.array, kernel_size: int):
     as_tensor = torch.tensor(array, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-    kernel = torch.tensor(np.ones((kernel_size, kernel_size))).unsqueeze(0).unsqueeze(0)
+    kernel = torch.tensor(np.ones((kernel_size, kernel_size)), dtype=torch.float32).unsqueeze(0).unsqueeze(0)
     convolved = nn.functional.conv2d(as_tensor, kernel, padding=kernel_size // 2)
     if DEBUG:
         assert convolved.shape == as_tensor.shape
@@ -110,19 +110,68 @@ def convolve2d_torch(array: np.array, kernel_size: int):
 
 
 def smoothing(tb_right):
+    max_d = 30
+    smoothed_auto_correlations = []
+    kernel_size = 5
 
+    for d in range(max_d + 1):
+        # Create shifted right image
+        shifted_right = shift_array(tb_right, d)
+        
+        # Calculate the absolute difference between the original right image and the shifted right image
+        abs_diff_image = np.abs(tb_right - shifted_right)
+        
+        # Use 5x5 box filter for smoothing (convolution)
+        smoothed_diff_image = convolve2d_torch(abs_diff_image, kernel_size)
+        
+        # Extract the smoothed auto-correlation value at pixel (152, 152)
+        smoothed_auto_correlations.append(smoothed_diff_image[152][152])
+
+    if DEBUG:
+        plot_1d_array(smoothed_auto_correlations, "Smoothed Auto-correlation", save_image=False)
+        plot_2d_array_as_image(smoothed_diff_image, "Smoothed Auto-correlation Image", save_image=False)
+        
+    return smoothed_auto_correlations
 
 def cross_correlation(tb_left, tb_right):
+    max_d = 30
+    kernel_size = 5
+    height, width = tb_left.shape
+    
+    # Create a 3D array to store all smoothed cross-correlation images
+    smoothed_cross_correlation_tensor = np.zeros((height, width, max_d + 1))
+    cross_correlation_values_at_152 = []
+
+    for d in range(max_d + 1):
+        # Create shifted right image
+        shifted_right = shift_array(tb_right, d)
+        
+        # Calculate the absolute difference between the original left image and the shifted right image
+        abs_diff_image = np.abs(tb_left - shifted_right)
+        
+        # Use 5x5 box filter for smoothing
+        smoothed_diff = convolve2d_torch(abs_diff_image, kernel_size)
+        
+        # Store the smoothed result in the 3D array
+        smoothed_cross_correlation_tensor[:, :, d] = smoothed_diff
+        
+        # Extract the value at (152, 152) for plotting
+        cross_correlation_values_at_152.append(smoothed_diff[152][152])
+
+    if DEBUG:
+        plot_1d_array(cross_correlation_values_at_152, "Cross-correlation at (152, 152)", save_image=False)
+        plot_2d_array_as_image(smoothed_diff, "Smoothed Cross-correlation Image", save_image=False)
+        
+    return smoothed_cross_correlation_tensor
+
+# def disparity_map(
 
 
-def disparity_map(
-
-
-def right_left_disparity(tb_left, tb_right, plot_result=False):
+# def right_left_disparity(tb_left, tb_right, plot_result=False):
 
 
 
-def disparity_check(tb_left, tb_right):
+# def disparity_check(tb_left, tb_right):
 
 
 
@@ -132,12 +181,13 @@ def reconstruction(tb_left, tb_right):
 
 
 if __name__ == "__main__":
+    DEBUG = True
     tb_left = load_image_in_grayscale("tsukuba_left.png")
     tb_right = load_image_in_grayscale("tsukuba_right.png")
     # scanlines(tb_left, tb_right)
     # auto_correlation(tb_right)
-    # smoothing(tb_right)
-    # cross_correlation(tb_left, tb_right)
+    smoothing(tb_right)
+    cross_correlation(tb_left, tb_right)
     # disparity_map(tb_left, tb_right, plot_result=True)
     # right_left_disparity(tb_left, tb_right, plot_result=True)
-    disparity_check(tb_left, tb_right)
+    # disparity_check(tb_left, tb_right)
